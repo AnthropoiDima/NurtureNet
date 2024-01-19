@@ -128,4 +128,32 @@ public class KorisnikController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpPost("DodajOglasKorisnik/{email}/{opis}/{plata}/{vreme}/{vestine}")]
+    public async Task<ActionResult> DodajOglasKorisnik(string email, string opis, double plata,
+        string vreme, string vestine)
+    {
+        try
+        {
+            Oglas noviOglas = new Oglas{
+                Opis = opis,
+                Plata = plata,
+                RadnoVreme = vreme,
+                Vestine = vestine,
+                JeDadilja = false
+            };
+            await _client.Cypher
+                .Match("(korisnik:Korisnik)")
+                .Where((Korisnik korisnik) => korisnik.Email == email)
+                .Create("(korisnik)-(:OBJAVLJUJE)->(oglas:Oglas $noviOglas)")
+                .WithParam("noviOglas", noviOglas)
+                .ExecuteWithoutResultsAsync();
+            
+           return Ok("Uspesno dodat oglas.");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }

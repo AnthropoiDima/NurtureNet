@@ -36,7 +36,7 @@ public class OglasController : ControllerBase
     }
 
     
-    [HttpPost("DodajOglas/{opis}/{plata}/{vreme}/{vestine}/{jeDadilja}")]
+    [HttpPost("DodajOglas/{email}/{opis}/{plata}/{vreme}/{vestine}/{jeDadilja}")]
     public async Task<ActionResult> DodajOglas(string opis, double plata,
         string vreme, string vestine, bool jeDadilja)
     {

@@ -4,7 +4,6 @@ public class DadiljaController : ControllerBase
 {
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
-    
 
     public DadiljaController(IConfiguration configuration, IGraphClient graphClient)
     {
@@ -17,7 +16,6 @@ public class DadiljaController : ControllerBase
     {
         try
         {
-            
             var query = _client.Cypher.Match("(d:Dadilja)")
                 .Return(d => new{ 
                     d.As<Dadilja>().Ime,
@@ -34,13 +32,12 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Message);
-            return BadRequest("Neuspesno preuzimanje dadilja.");
+            return BadRequest(e.Message);
         }
     }
 
     [HttpGet("PreuzmiDadiljuPoEmailu/{email}")]
-    public async Task<ActionResult> PreuzmiDadiljuPoImenu(string email)
+    public async Task<ActionResult> PreuzmiDadiljuPoEmailu(string email)
     {
         try
         {
@@ -76,9 +73,9 @@ public class DadiljaController : ControllerBase
                 Grad = grad,
                 DatumRodjenja = datum,
                 Pol = pol,
-                BrojTelefona = broj
+                BrojTelefona = broj,
+                Vestine = vestine
             };
-            novaDadilja.Vestine.Add(vestine);
            await _client.Cypher
            .Create("(dadilja:Dadilja $novaDadilja)")
            .WithParam("novaDadilja", novaDadilja)
@@ -130,7 +127,6 @@ public class DadiljaController : ControllerBase
         }
     }
 
-
     [HttpDelete("ObrisiDadilju/{email}")]
     public async Task<ActionResult> ObrisiDadilju(string email)
     {
@@ -143,6 +139,34 @@ public class DadiljaController : ControllerBase
            .ExecuteWithoutResultsAsync();
             
            return Ok("Uspesno obrisana dadilja.");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        }
+
+    [HttpPost("DodajOglasDadilja/{email}/{opis}/{plata}/{vreme}/{vestine}")]
+    public async Task<ActionResult> DodajOglasDadilja(string email, string opis, double plata,
+        string vreme, string vestine)
+    {
+        try
+        {
+            Oglas noviOglas = new Oglas{
+                Opis = opis,
+                Plata = plata,
+                RadnoVreme = vreme,
+                Vestine = vestine,
+                JeDadilja = true
+            };
+            await _client.Cypher
+                .Match("(dadilja:Dadilja)")
+                .Where((Dadilja dadilja) => dadilja.Email == email)
+                .Create("(dadilja)-[:OBJAVLJUJE]->(oglas:Oglas $noviOglas)")
+                .WithParam("noviOglas", noviOglas)
+                .ExecuteWithoutResultsAsync();
+            
+           return Ok("Uspesno dodat oglas.");
         }
         catch (Exception ex)
         {

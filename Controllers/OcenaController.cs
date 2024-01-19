@@ -91,26 +91,68 @@ public class OcenaController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+    
+    [HttpPost("OceniDadilju/{emailKorisnika}/{emailDadilje}/{vrednost}/{komentar}")]
+    public async Task<ActionResult> OceniDadilju(string emailKorisnika, string emailDadilje, 
+        int vrednost, string komentar)
+    {
+        try
+        {
+            // var dadilj = await _client.Cypher.Match("(d:Dadilja)")
+            //     .Where((Dadilja d) => d.Email == emailDadilje)
+            //     .Return<Dadilja>(d => d.As<Dadilja>()).ResultsAsync;
 
-    // [HttpPut("OceniDadilju/{id}/{vrednost}/{komentar}")]
-    // public async Task<ActionResult> OceniDadilju(int id, int vrednost, string komentar)
-    // {
-    //     try
-    //     {
-    //        await _client.Cypher
-    //        .Match("(o:Ocena)")
-    //        .Where((Ocena o) => o.Id == id)
-    //        .Set("o.Vrednost = $vrednost")
-    //        .Set("o.Komentar = $komentar")
-    //        .WithParam("vrednost", vrednost)
-    //        .WithParam("komentar", komentar)
-    //        .ExecuteWithoutResultsAsync();
+            // Dadilja dadilja = dadilj.FirstOrDefault();
+        
+            // var korisn = await _client.Cypher.Match("(d:Korisnik)")
+            //     .Where((Korisnik d) => d.Email == emailKorisnika)
+            //     .Return<Korisnik>(d => d.As<Korisnik>()).ResultsAsync;
+
+            // Korisnik korisnik = korisn.FirstOrDefault();
+
+            Ocena novaOcena = new Ocena{
+                Vrednost = vrednost,
+                Komentar = komentar
+            };
+            await _client.Cypher
+                .Match("(dadilja: Dadilja)", "(korisnik: Korisnik)")
+                .Where((Dadilja dadilja) => dadilja.Email == emailDadilje)
+                .AndWhere((Korisnik korisnik) => korisnik.Email == emailKorisnika)
+                .Create("(korisnik)-[:OCENJUJE {Ocena:$novaOcena.Vrednost, Komentar:$novaOcena.Komentar}]->(dadilja)")
+                .WithParam("novaOcena", novaOcena)
+                .ExecuteWithoutResultsAsync();
             
-    //        return Ok("Uspesno ocenjena dadilja.");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         return BadRequest(ex.Message);
-    //     }
-    // }
+           return Ok("Uspesno ocenjena dadilja.");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("OceniKorisnika/{emailKorisnika}/{emailDadilje}/{vrednost}/{komentar}")]
+    public async Task<ActionResult> OceniKorisnika(string emailKorisnika, string emailDadilje, 
+        int vrednost, string komentar)
+    {
+        try
+        {
+            Ocena novaOcena = new Ocena{
+                Vrednost = vrednost,
+                Komentar = komentar
+            };
+            await _client.Cypher
+                .Match("(dadilja: Dadilja)", "(korisnik: Korisnik)")
+                .Where((Dadilja dadilja) => dadilja.Email == emailDadilje)
+                .AndWhere((Korisnik korisnik) => korisnik.Email == emailKorisnika)
+                .Create("(dadilja)-[:OCENJUJE {Ocena:$novaOcena.Vrednost, Komentar:$novaOcena.Komentar}]->(korisnik)")
+                .WithParam("novaOcena", novaOcena)
+                .ExecuteWithoutResultsAsync();
+            
+           return Ok("Uspesno ocenjen korisnik.");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }
