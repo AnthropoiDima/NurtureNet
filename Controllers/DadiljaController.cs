@@ -144,7 +144,7 @@ public class DadiljaController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
-        }
+    }
 
     [HttpPost("DodajOglasDadilja/{email}/{opis}/{plata}/{vreme}/{vestine}")]
     public async Task<ActionResult> DodajOglasDadilja(string email, string opis, double plata,
@@ -167,6 +167,26 @@ public class DadiljaController : ControllerBase
                 .ExecuteWithoutResultsAsync();
             
            return Ok("Uspesno dodat oglas.");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+    
+    [HttpPut("RezervisiOglas/{email}/{oglasId}")]
+    public async Task<ActionResult> RezervisiOglas(string email, int oglasId)
+    {
+        try
+        {
+           await _client.Cypher
+           .Match("(dadilja:Dadilja)", "(oglas:Oglas)")
+           .Where((Dadilja dadilja) => dadilja.Email == email)
+           .AndWhere((Oglas oglas) => oglas.Id == oglasId)
+           .Create("(dadilja)-[:SE_PRIJAVLJUJE]->(oglas)")
+           .ExecuteWithoutResultsAsync();
+ 
+           return Ok("Uspesna prijava na oglas.");
         }
         catch (Exception ex)
         {
