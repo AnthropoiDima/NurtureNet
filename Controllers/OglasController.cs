@@ -36,7 +36,6 @@ public class OglasController : ControllerBase
         }
     }
 
-    
     [HttpPost("DodajOglas/{email}/{opis}/{plata}/{vreme}/{vestine}/{jeDadilja}")]
     public async Task<ActionResult> DodajOglas(string opis, double plata,
         string vreme, string vestine, bool jeDadilja)
@@ -62,7 +61,6 @@ public class OglasController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-    
     
     [HttpPost("DodajOglasFromBody")]
     public async Task<ActionResult> DodajOglasFromBody([FromBody] Oglas oglas)

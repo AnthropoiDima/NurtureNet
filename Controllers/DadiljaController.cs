@@ -152,7 +152,6 @@ public class DadiljaController : ControllerBase
         }
     }
 
-
     [HttpDelete("ObrisiDadilju/{email}")]
     public async Task<ActionResult> ObrisiDadilju(string email)
     {

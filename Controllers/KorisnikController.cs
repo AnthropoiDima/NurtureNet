@@ -111,29 +111,7 @@ public class KorisnikController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-    
-    [HttpPut("IzmeniLozinku/{email}/{novaLozinka}")]
-    public async Task<ActionResult> IzmeniLozinku(string email, string novaLozinka)
-    {
-        try
-        {
-            novaLozinka = _autentifikacija.HesirajPassword(novaLozinka);
-           await _client.Cypher
-           .Match("(k:Korisnik)")
-           .Where((Korisnik k) => k.Email == email)
-           .Set("k.Password = $novaLozinka")
-           .WithParam("novaLozinka", novaLozinka)
-           .ExecuteWithoutResultsAsync();
-            
-           return Ok("Uspesno izmenjena lozinka.");
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
 
-    
     [HttpDelete("ObrisiKorisnika/{email}")]
     public async Task<ActionResult> ObrisiKorisnika(string email)
     {
