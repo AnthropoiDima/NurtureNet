@@ -126,6 +126,27 @@ public class DadiljaController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+    
+    [HttpPut("IzmeniLozinku/{email}/{novaLozinka}")]
+    public async Task<ActionResult> IzmeniLozinku(string email, string novaLozinka)
+    {
+        try
+        {
+           await _client.Cypher
+           .Match("(dadilja:Dadilja)")
+           .Where((Dadilja dadilja) => dadilja.Email == email)
+           .Set("dadilja.Password = $novaLozinka")
+           .WithParam("novaLozinka", novaLozinka)
+           .ExecuteWithoutResultsAsync();
+            
+           return Ok("Uspesno izmenjena lozinka.");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
 
     [HttpDelete("ObrisiDadilju/{email}")]
     public async Task<ActionResult> ObrisiDadilju(string email)

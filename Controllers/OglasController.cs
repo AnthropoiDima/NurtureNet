@@ -19,6 +19,7 @@ public class OglasController : ControllerBase
         {
             var query = _client.Cypher.Match("(p:Oglas)").Return(p => new
             {
+                p.As<Oglas>().Id,
                 p.As<Oglas>().Opis,
                 p.As<Oglas>().Plata,
                 p.As<Oglas>().RadnoVreme,

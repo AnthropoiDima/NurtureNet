@@ -20,6 +20,7 @@ public class OcenaController : ControllerBase
         {
             var query = _client.Cypher.Match("(p:Ocena)").Return(p => new
             {
+                p.As<Ocena>().Id,
                 p.As<Ocena>().Vrednost,
                 p.As<Ocena>().Komentar
 
