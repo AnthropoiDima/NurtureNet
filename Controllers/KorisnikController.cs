@@ -1,15 +1,18 @@
+using backend.Servisi.Autentifikacija;
+
 [ApiController]
 [Route("[controller]")]
 public class KorisnikController : ControllerBase
 {
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
-    
+    private Autentifikacija _autentifikacija;
 
     public KorisnikController(IConfiguration configuration, IGraphClient graphClient)
     {
         _config = configuration;
         _client = graphClient;
+        _autentifikacija = new Autentifikacija(_config);
     }
     
 
@@ -114,7 +117,7 @@ public class KorisnikController : ControllerBase
     {
         try
         {
-            novaLozinka = BCrypt.Net.BCrypt.HashPassword(novaLozinka);
+            novaLozinka = _autentifikacija.HesirajPassword(novaLozinka);
            await _client.Cypher
            .Match("(k:Korisnik)")
            .Where((Korisnik k) => k.Email == email)

@@ -1,14 +1,18 @@
+using backend.Servisi.Autentifikacija;
+
 [ApiController]
-[Route("[controller]")]
+[Route("[controller]")] 
 public class DadiljaController : ControllerBase
 {
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
+    private Autentifikacija _autentifikacija;
 
     public DadiljaController(IConfiguration configuration, IGraphClient graphClient)
     {
         _config = configuration;
         _client = graphClient;
+        _autentifikacija = new Autentifikacija(_config);
     }
     
     [HttpGet("PreuzmiDadilje")]
@@ -132,7 +136,7 @@ public class DadiljaController : ControllerBase
     {
         try
         {
-            novaLozinka = BCrypt.Net.BCrypt.HashPassword(novaLozinka);
+            novaLozinka = _autentifikacija.HesirajPassword(novaLozinka);
            await _client.Cypher
            .Match("(dadilja:Dadilja)")
            .Where((Dadilja dadilja) => dadilja.Email == email)
