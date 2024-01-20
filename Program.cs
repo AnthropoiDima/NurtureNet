@@ -2,6 +2,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Neo4jClient;
 using Swashbuckle.AspNetCore.Filters;
+using NRedisStack;
+using StackExchange.Redis;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +31,16 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>{
         IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value!))
     };
 });
+
+#pragma warning disable
+builder.Services.AddSingleton<IConnectionMultiplexer>(option =>
+    ConnectionMultiplexer.Connect(new ConfigurationOptions{
+        EndPoints = {builder.Configuration.GetConnectionString("redis")},
+        AbortOnConnectFail = false,
+        Ssl = false,
+        Password = ""
+    }));
+#pragma warning enable
 
 builder.Services.AddSingleton<IGraphClient>(options => {
     var neo4jClient = new GraphClient(

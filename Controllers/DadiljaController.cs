@@ -1,4 +1,6 @@
 using backend.Servisi.Autentifikacija;
+using StackExchange.Redis;
+using NRedisStack;
 
 [ApiController]
 [Route("[controller]")] 
@@ -6,13 +8,18 @@ public class DadiljaController : ControllerBase
 {
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
+    private readonly IConnectionMultiplexer _redis;
+    private readonly IDatabase _redisDB;
     private Autentifikacija _autentifikacija;
 
-    public DadiljaController(IConfiguration configuration, IGraphClient graphClient)
+    public DadiljaController(IConfiguration configuration, IGraphClient graphClient, 
+    IConnectionMultiplexer redis)
     {
         _config = configuration;
         _client = graphClient;
         _autentifikacija = new Autentifikacija(_config);
+        _redis = redis;
+        _redisDB = _redis.GetDatabase();
     }
     
     [HttpGet("PreuzmiDadilje")]
@@ -30,9 +37,11 @@ public class DadiljaController : ControllerBase
                     d.As<Dadilja>().Pol,
                     d.As<Dadilja>().BrojTelefona                                    
                 });
-                
+
+            _redisDB.StringSet("foo", "bar");
+
             var result = await query.ResultsAsync;
-            return Ok(result);
+            return Ok(_redisDB.StringGet("foo"));
         }
         catch (Exception e)
         {

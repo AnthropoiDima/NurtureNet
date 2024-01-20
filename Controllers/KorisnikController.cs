@@ -1,18 +1,23 @@
 using backend.Servisi.Autentifikacija;
+using StackExchange.Redis;
 
 [ApiController]
 [Route("[controller]")]
 public class KorisnikController : ControllerBase
 {
     private readonly IGraphClient _client;
+    private readonly IConnectionMultiplexer _redis;
+    private readonly IDatabase _redisDB;
     private readonly IConfiguration _config;
     private Autentifikacija _autentifikacija;
 
-    public KorisnikController(IConfiguration configuration, IGraphClient graphClient)
+    public KorisnikController(IConfiguration configuration, IGraphClient graphClient, IConnectionMultiplexer redis)
     {
         _config = configuration;
         _client = graphClient;
         _autentifikacija = new Autentifikacija(_config);
+        _redis = redis;
+        _redisDB = _redis.GetDatabase();
     }
     
 
