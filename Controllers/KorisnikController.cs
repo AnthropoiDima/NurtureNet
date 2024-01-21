@@ -11,7 +11,8 @@ public class KorisnikController : ControllerBase
     private readonly IConfiguration _config;
     private Autentifikacija _autentifikacija;
 
-    public KorisnikController(IConfiguration configuration, IGraphClient graphClient, IConnectionMultiplexer redis)
+    public KorisnikController(IConfiguration configuration, IGraphClient graphClient, 
+    IConnectionMultiplexer redis)
     {
         _config = configuration;
         _client = graphClient;
@@ -20,7 +21,6 @@ public class KorisnikController : ControllerBase
         _redisDB = _redis.GetDatabase();
     }
     
-
     [HttpGet("PreuzmiKorisnike")]
     public async Task<ActionResult> PreuzmiKorisnike()
     {
