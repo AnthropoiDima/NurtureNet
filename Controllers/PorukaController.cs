@@ -22,4 +22,15 @@ public class PorukaController : ControllerBase
         _redisDB = _redis.GetDatabase();
     }
 
+    public void PosaljiPoruku()
+    {
+        string ChatChannel = "ChatChannel";
+        var pubsub = _redis.GetSubscriber();
+        pubsub.Subscribe(ChatChannel, (channel, poruka) => MessageAction(poruka));
+    }
+
+    public void MessageAction(RedisValue poruka)
+    {
+
+    }
 }
