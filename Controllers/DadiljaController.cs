@@ -1,4 +1,6 @@
 using backend.Servisi.Autentifikacija;
+using StackExchange.Redis;
+using NRedisStack;
 
 [ApiController]
 [Route("[controller]")] 
@@ -6,13 +8,18 @@ public class DadiljaController : ControllerBase
 {
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
+    private readonly IConnectionMultiplexer _redis;
+    private readonly IDatabase _redisDB;
     private Autentifikacija _autentifikacija;
 
-    public DadiljaController(IConfiguration configuration, IGraphClient graphClient)
+    public DadiljaController(IConfiguration configuration, IGraphClient graphClient, 
+    IConnectionMultiplexer redis)
     {
         _config = configuration;
         _client = graphClient;
         _autentifikacija = new Autentifikacija(_config);
+        _redis = redis;
+        _redisDB = _redis.GetDatabase();
     }
     
     [HttpGet("PreuzmiDadilje")]
@@ -30,7 +37,9 @@ public class DadiljaController : ControllerBase
                     d.As<Dadilja>().Pol,
                     d.As<Dadilja>().BrojTelefona                                    
                 });
-                
+
+            _redisDB.StringSet("foo", "bar");
+
             var result = await query.ResultsAsync;
             return Ok(result);
         }
@@ -152,7 +161,6 @@ public class DadiljaController : ControllerBase
         }
     }
 
-
     [HttpDelete("ObrisiDadilju/{email}")]
     public async Task<ActionResult> ObrisiDadilju(string email)
     {
@@ -213,6 +221,31 @@ public class DadiljaController : ControllerBase
            .ExecuteWithoutResultsAsync();
  
            return Ok("Uspesna prijava na oglas.");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("PreuzmiPrijavljeneOglase/{email}")]
+    public async Task<ActionResult> PreuzmiPrijavljeneOglase(string email)
+    {
+        try
+        {
+            var query = _client.Cypher
+            .OptionalMatch("(dadilja:Dadilja)-[:SE_PRIJAVLJUJE]->(oglas:Oglas)")
+            .Where((Dadilja dadilja) => dadilja.Email == email)
+            .Return(oglas => new
+            {
+                oglas.As<Oglas>().Opis,
+                oglas.As<Oglas>().Plata,
+                oglas.As<Oglas>().RadnoVreme,
+                oglas.As<Oglas>().Vestine
+            });
+            
+            var result = await query.ResultsAsync;
+            return Ok(result);
         }
         catch (Exception ex)
         {

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using backend.DTOs;
 using Microsoft.IdentityModel.Tokens;
 
 namespace backend.Servisi.Autentifikacija;
@@ -17,10 +18,11 @@ public class Autentifikacija
         return BCrypt.Net.BCrypt.Verify(pass, passHash);
     }
 
-    public string GenerisiTokenDadilja(string email){
+    public string GenerisiTokenDadilja(Dadilja dadilja){
         List<Claim> claims = new List<Claim>{
-            new Claim(ClaimTypes.Email, email),
-            new Claim(ClaimTypes.Role, "Dadilja")
+            new Claim(ClaimTypes.Name, dadilja.Email),
+            new Claim(ClaimTypes.Email, dadilja.Email),
+            new Claim(ClaimTypes.Role, "dadilja")
         };
         var kljuc = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_config.GetSection("AppSettings:Token").Value!));
         
@@ -37,10 +39,11 @@ public class Autentifikacija
         return jwt;
     }
 
-    public string GenerisiTokenKorisnik(string email){
+    public string GenerisiTokenKorisnik(Korisnik korisnik){
         List<Claim> claims = new List<Claim>{
-            new Claim(ClaimTypes.Email, email),
-            new Claim(ClaimTypes.Role, "Korisnik")
+            new Claim(ClaimTypes.Name, korisnik.Email),
+            new Claim(ClaimTypes.Email, korisnik.Email),
+            new Claim(ClaimTypes.Role, "korisnik")
         };
         var kljuc = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_config.GetSection("AppSettings:Token").Value!));
         

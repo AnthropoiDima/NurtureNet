@@ -2,10 +2,24 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Neo4jClient;
 using Swashbuckle.AspNetCore.Filters;
+using NRedisStack;
+using StackExchange.Redis;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CORS", policy =>
+    {
+        policy.AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowAnyOrigin();
+    });
+});
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -29,6 +43,16 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>{
     };
 });
 
+#pragma warning disable
+builder.Services.AddSingleton<IConnectionMultiplexer>(option =>
+    ConnectionMultiplexer.Connect(new ConfigurationOptions{
+        EndPoints = {builder.Configuration.GetConnectionString("redis")},
+        AbortOnConnectFail = false,
+        Ssl = false,
+        Password = ""
+    }));
+#pragma warning enable
+
 builder.Services.AddSingleton<IGraphClient>(options => {
     var neo4jClient = new GraphClient(
         builder.Configuration.GetConnectionString("neo4j"),
@@ -49,6 +73,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("CORS");
 
 app.UseAuthorization();
 

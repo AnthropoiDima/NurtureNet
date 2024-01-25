@@ -122,36 +122,52 @@ public class AutentifikacijaController : ControllerBase
             var queryK = await _client.Cypher
                 .Match("(k:Korisnik)")
                 .Where((Korisnik k) => k.Email == dto.Email)
-                .Return(k => new{
-                    k.As<Korisnik>().Password, 
-                    k.As<Korisnik>().Email}).ResultsAsync;
+                .Return(k => new {k.As<Korisnik>().Ime,
+                k.As<Korisnik>().Prezime,
+                k.As<Korisnik>().Pol,
+                k.As<Korisnik>().DatumRodjenja,
+                k.As<Korisnik>().Email,
+                k.As<Korisnik>().Drzava,
+                k.As<Korisnik>().Grad,
+                k.As<Korisnik>().BrojTelefona,
+                k.As<Korisnik>().Password,
+                }).ResultsAsync;
 
             var queryD = await _client.Cypher
                 .Match("(d:Dadilja)")
                 .Where((Dadilja d) => d.Email == dto.Email)
-                .Return(d => new {
-                    d.As<Dadilja>().Password,
-                    d.As<Dadilja>().Email
-                }).ResultsAsync;
+                .Return(d => d.As<Dadilja>()).ResultsAsync;
 
             if(queryD.Count() != 0)
             {
-                var dadilja = queryD.First();
+                Dadilja dadilja = queryD.First();
                 if (!_autentifikacija.ProveriPassword(dto.Password!, dadilja.Password))
                     {
                         return BadRequest("Pogresna lozinka.");
                     }
-                var token = _autentifikacija.GenerisiTokenDadilja(dadilja.Email);
+                var token = _autentifikacija.GenerisiTokenDadilja(dadilja);
                 return Ok($"{token}");
             }
             else if(queryK.Count() != 0)
             {
-                var korisnik = queryK.First();
+                var k = queryK.First();
+                Korisnik korisnik = new Korisnik{
+                    Ime = k.Ime,
+                    Prezime = k.Prezime,
+                    DatumRodjenja = k.DatumRodjenja,
+                    Pol = k.Pol,
+                    Email = k.Email,
+                    Drzava = k.Drzava,
+                    Grad = k.Grad,
+                    BrojTelefona = k.BrojTelefona,
+                    Password = k.Password
+                };
+                Console.WriteLine(korisnik.Password + " " + korisnik.Email);
                 if (!_autentifikacija.ProveriPassword(dto.Password!, korisnik.Password))
                     {
                         return BadRequest("Pogresna lozinka.");
                     }
-                var token = _autentifikacija.GenerisiTokenKorisnik(korisnik.Email);
+                var token = _autentifikacija.GenerisiTokenKorisnik(korisnik);
                 return Ok($"{token}");
             }
             else

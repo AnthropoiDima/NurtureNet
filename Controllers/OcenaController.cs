@@ -156,4 +156,55 @@ public class OcenaController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+
+    [HttpGet("PreuzmiOceneDadilje/{email}")]
+    public async Task<ActionResult> PreuzmiOceneDadilje(string email)   
+    {
+        try
+        {
+            var query = _client.Cypher
+            .OptionalMatch("(korisnik: Korisnik)-[OCENJUJE]->(dadilja: Dadilja)")
+            .Where((Dadilja dadilja) => dadilja.Email == email)
+            .Return(ocena => new
+            {
+                ocena.As<Ocena>().Id,
+                ocena.As<Ocena>().Vrednost,
+                ocena.As<Ocena>().Komentar
+
+            });
+            
+            var result = await query.ResultsAsync;
+            return Ok(result);
+        }
+        catch (Exception)
+        {
+            return BadRequest("Neuspesno preuzimanje ocena dadilje.");
+        }
+    }
+    
+    [HttpGet("PreuzmiOceneKorisnika/{email}")]
+    public async Task<ActionResult> PreuzmiOceneKorisnika(string email)
+    {
+        try
+        {
+            var query = _client.Cypher
+            .OptionalMatch("(dadilja: Dadilja)-[OCENJUJE]->(korisnik: Korisnik)")
+            .Where((Korisnik korisnik) => korisnik.Email == email)
+            .Return(ocena => new
+            {
+                ocena.As<Ocena>().Id,
+                ocena.As<Ocena>().Vrednost,
+                ocena.As<Ocena>().Komentar
+
+            });
+            
+            var result = await query.ResultsAsync;
+            return Ok(result);
+        }
+        catch (Exception)
+        {
+            return BadRequest("Neuspesno preuzimanje ocena dadilje.");
+        }
+    }
 }
