@@ -14,6 +14,15 @@ public class KorisnikFje{
         
     }
 
+    public string? GetCurrentUserRole(ClaimsPrincipal korisnik){
+        var ulogaKorisnikaObj = korisnik.Claims.Where(v=>v.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").Select(p=>new string(p.Value));
+        string ulogaKorisnika = ulogaKorisnikaObj.ElementAtOrDefault(0)!;
+        if(String.IsNullOrWhiteSpace(ulogaKorisnika)){
+            return null;
+        }
+        return ulogaKorisnika;
+    }
+
     public bool CheckIfAdmin(ClaimsPrincipal korisnik){
         var ulogaKorisnikaObj = korisnik.Claims.Where(v=>v.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").Select(p=>new string(p.Value));
         string ulogaKorisnika = ulogaKorisnikaObj.ElementAtOrDefault(0)!;
