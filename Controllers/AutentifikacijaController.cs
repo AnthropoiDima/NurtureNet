@@ -9,7 +9,11 @@ public class AutentifikacijaController : ControllerBase
     private readonly IConfiguration _config;
     private Autentifikacija _autentifikacija;
 
+<<<<<<< HEAD
     public AutentifikacijaController(IConfiguration configuration, IGraphClient graphClient, Autentifikacija autentifikacija)
+=======
+    public AutentifikacijaController(IConfiguration configuration, IGraphClient graphClient)
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
     {
         _config = configuration;
         _client = graphClient;
@@ -101,7 +105,11 @@ public class AutentifikacijaController : ControllerBase
             };
 
             await _client.Cypher
+<<<<<<< HEAD
                 .Create("(k:Korisnik {novi})")
+=======
+                .Create("(k:Korisnik $novi)")
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
                 .WithParam("novi", noviKorisnik)
                 .ExecuteWithoutResultsAsync();
 
@@ -122,16 +130,23 @@ public class AutentifikacijaController : ControllerBase
             var queryK = await _client.Cypher
                 .Match("(k:Korisnik)")
                 .Where((Korisnik k) => k.Email == dto.Email)
+<<<<<<< HEAD
                 .Return(k => k.As<Korisnik>()).ResultsAsync;
 
             if (queryK.Count() == 0)
             {
                 return BadRequest("Korisnik sa ovim emailom ne postoji.");
             }
+=======
+                .Return(k => new{
+                    k.As<Korisnik>().Password, 
+                    k.As<Korisnik>().Email}).ResultsAsync;
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
 
             var queryD = await _client.Cypher
                 .Match("(d:Dadilja)")
                 .Where((Dadilja d) => d.Email == dto.Email)
+<<<<<<< HEAD
                 .Return(k => k.As<Dadilja>()).ResultsAsync;
 
             if (queryD.Count() == 0)
@@ -149,6 +164,37 @@ public class AutentifikacijaController : ControllerBase
             var token = _autentifikacija.GenerisiTokenDadilja(dadilja);
 
             return Ok(new { token });
+=======
+                .Return(d => new {
+                    d.As<Dadilja>().Password,
+                    d.As<Dadilja>().Email
+                }).ResultsAsync;
+
+            if(queryD.Count() != 0)
+            {
+                var dadilja = queryD.First();
+                if (!_autentifikacija.ProveriPassword(dto.Password!, dadilja.Password))
+                    {
+                        return BadRequest("Pogresna lozinka.");
+                    }
+                var token = _autentifikacija.GenerisiTokenDadilja(dadilja.Email);
+                return Ok($"{token}");
+            }
+            else if(queryK.Count() != 0)
+            {
+                var korisnik = queryK.First();
+                if (!_autentifikacija.ProveriPassword(dto.Password!, korisnik.Password))
+                    {
+                        return BadRequest("Pogresna lozinka.");
+                    }
+                var token = _autentifikacija.GenerisiTokenKorisnik(korisnik.Email);
+                return Ok($"{token}");
+            }
+            else
+            {
+                return BadRequest("Korisnik sa ovim emailom ne postoji.");
+            }
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
         }
         catch (Exception e)
         {

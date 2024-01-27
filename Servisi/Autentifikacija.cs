@@ -17,9 +17,9 @@ public class Autentifikacija
         return BCrypt.Net.BCrypt.Verify(pass, passHash);
     }
 
-    public string GenerisiTokenDadilja(Dadilja dadilja){
+    public string GenerisiTokenDadilja(string email){
         List<Claim> claims = new List<Claim>{
-            new Claim(ClaimTypes.Email, dadilja.Email),
+            new Claim(ClaimTypes.Email, email),
             new Claim(ClaimTypes.Role, "Dadilja")
         };
         var kljuc = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_config.GetSection("AppSettings:Token").Value!));
@@ -37,9 +37,9 @@ public class Autentifikacija
         return jwt;
     }
 
-    public string GenerisiTokenKorisnik(Korisnik korisnik){
+    public string GenerisiTokenKorisnik(string email){
         List<Claim> claims = new List<Claim>{
-            new Claim(ClaimTypes.Email, korisnik.Email),
+            new Claim(ClaimTypes.Email, email),
             new Claim(ClaimTypes.Role, "Korisnik")
         };
         var kljuc = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_config.GetSection("AppSettings:Token").Value!));

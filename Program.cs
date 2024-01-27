@@ -2,9 +2,12 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Neo4jClient;
 using Swashbuckle.AspNetCore.Filters;
+<<<<<<< HEAD
 using NRedisStack;
 using StackExchange.Redis;
 using System.Net;
+=======
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +35,7 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>{
     };
 });
 
+<<<<<<< HEAD
 #pragma warning disable
 builder.Services.AddSingleton<IConnectionMultiplexer>(option =>
     ConnectionMultiplexer.Connect(new ConfigurationOptions{
@@ -42,6 +46,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(option =>
     }));
 #pragma warning enable
 
+=======
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
 builder.Services.AddSingleton<IGraphClient>(options => {
     var neo4jClient = new GraphClient(
         builder.Configuration.GetConnectionString("neo4j"),

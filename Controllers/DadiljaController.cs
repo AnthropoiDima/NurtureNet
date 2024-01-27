@@ -1,6 +1,9 @@
 using backend.Servisi.Autentifikacija;
+<<<<<<< HEAD
 using StackExchange.Redis;
 using NRedisStack;
+=======
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
 
 [ApiController]
 [Route("[controller]")] 
@@ -8,18 +11,27 @@ public class DadiljaController : ControllerBase
 {
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
+<<<<<<< HEAD
     private readonly IConnectionMultiplexer _redis;
     private readonly IDatabase _redisDB;
     private Autentifikacija _autentifikacija;
 
     public DadiljaController(IConfiguration configuration, IGraphClient graphClient, 
     IConnectionMultiplexer redis)
+=======
+    private Autentifikacija _autentifikacija;
+
+    public DadiljaController(IConfiguration configuration, IGraphClient graphClient)
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
     {
         _config = configuration;
         _client = graphClient;
         _autentifikacija = new Autentifikacija(_config);
+<<<<<<< HEAD
         _redis = redis;
         _redisDB = _redis.GetDatabase();
+=======
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
     }
     
     [HttpGet("PreuzmiDadilje")]
@@ -37,11 +49,17 @@ public class DadiljaController : ControllerBase
                     d.As<Dadilja>().Pol,
                     d.As<Dadilja>().BrojTelefona                                    
                 });
+<<<<<<< HEAD
 
             _redisDB.StringSet("foo", "bar");
 
             var result = await query.ResultsAsync;
             return Ok(_redisDB.StringGet("foo"));
+=======
+                
+            var result = await query.ResultsAsync;
+            return Ok(result);
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
         }
         catch (Exception e)
         {
@@ -161,6 +179,10 @@ public class DadiljaController : ControllerBase
         }
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 37f029daae8a031fc71977ae39f7a972bf53cf6f
     [HttpDelete("ObrisiDadilju/{email}")]
     public async Task<ActionResult> ObrisiDadilju(string email)
     {
