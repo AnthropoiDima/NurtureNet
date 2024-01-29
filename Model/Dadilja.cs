@@ -1,6 +1,5 @@
-using System.Text.Json.Serialization;
-
 namespace backend.Model;
+// [JsonArray]
 public class Dadilja
 {
     public String Ime { get; set; } = null!;
@@ -13,10 +12,10 @@ public class Dadilja
     public String BrojTelefona { get; set; } = null!;
     public DateTime? DatumRodjenja { get; set; }
     public String Vestine { get; set; } =null!;
-    [JsonIgnore]
-    public ICollection<Ocena> OcenePrimljene { get; set; } = new List<Ocena>();
-    [JsonIgnore]
-    public ICollection<Ocena> OceneOstavljene { get; set; } = new List<Ocena>();
-    [JsonIgnore]
-    public ICollection<Oglas> Oglasi { get; set; } = new List<Oglas>();
+    // [JsonIgnore]
+    // public ICollection<Ocena> OcenePrimljene { get; set; } = new List<Ocena>();
+    // [JsonIgnore]
+    // public ICollection<Ocena> OceneOstavljene { get; set; } = new List<Ocena>();
+    // [JsonIgnore]
+    // public ICollection<Oglas> Oglasi { get; set; } = new List<Oglas>();
 }

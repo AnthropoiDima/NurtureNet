@@ -1,6 +1,8 @@
 using backend.Servisi.Autentifikacija;
 using StackExchange.Redis;
 using NRedisStack;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 [ApiController]
 [Route("[controller]")] 
@@ -54,13 +56,32 @@ public class DadiljaController : ControllerBase
     {
         try
         {
-            
-            var query = await _client.Cypher
-                .Match("(d:Dadilja)")
-                .Where((Dadilja d) => d.Email == email)
-                .Return(d => d.As<Dadilja>()).ResultsAsync;
+            string json;
+            string kljuc = "Dadilja:" + email;
+            json = await _redisDB.StringGetAsync(kljuc);
+            Console.WriteLine(json);
+            if (string.IsNullOrEmpty(json))
+            {
+                var query = _client.Cypher.Match("(d:Dadilja)")
+                    .Where((Dadilja d) => d.Email == email)
+                    .Return(d => d.As<Dadilja>());
+                var result = await query.ResultsAsync;
+                JObject jObject = JObject.Parse(JsonConvert.SerializeObject(result));
 
-            return Ok(query);
+                json = JsonConvert.SerializeObject(result);
+                //await _redisDB.StringSetAsync(kljuc, json);
+                return Ok(jObject["data"]);
+            }
+            else{
+                List<Dadilja> dadiljaList = JsonConvert.DeserializeObject<List<Dadilja>>(json);
+                Dadilja dadilja = dadiljaList.FirstOrDefault();
+                return Ok(dadilja);
+            }
+
+            // var query = await _client.Cypher
+            //     .Match("(d:Dadilja)")
+            //     .Where((Dadilja d) => d.Email == email)
+            //     .Return(d => d.As<Dadilja>()).ResultsAsync;
         }
         catch (Exception e)
         {

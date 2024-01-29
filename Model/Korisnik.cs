@@ -12,8 +12,8 @@ public class Korisnik
     public String BrojTelefona { get; set; } = null!;
     public DateTime DatumRodjenja { get; set; }
      
-    public ICollection<Ocena> OcenePrimeljene { get; set; } = new List<Ocena>();
-    public ICollection<Ocena> OceneOstavljene { get; set; } = new List<Ocena>();
-    public ICollection<Oglas> Oglasi { get; set; } = new List<Oglas>();
-    public ICollection<Oglas> SacuvaniOglasi { get; set; } = new List<Oglas>();
+    // public ICollection<Ocena> OcenePrimeljene { get; set; } = new List<Ocena>();
+    // public ICollection<Ocena> OceneOstavljene { get; set; } = new List<Ocena>();
+    // public ICollection<Oglas> Oglasi { get; set; } = new List<Oglas>();
+    // public ICollection<Oglas> SacuvaniOglasi { get; set; } = new List<Oglas>();
 }
