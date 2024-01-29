@@ -1,6 +1,7 @@
 using backend.Servisi.Autentifikacija;
 using backend.DTOs;
 using System.Text.RegularExpressions;
+using backend.Servisi.KorisnikFje;
 [ApiController]
 [Route("[controller]")]
 public class AutentifikacijaController : ControllerBase
@@ -8,12 +9,14 @@ public class AutentifikacijaController : ControllerBase
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
     private Autentifikacija _autentifikacija;
+    private KorisnikFje _korisnikFje;
 
     public AutentifikacijaController(IConfiguration configuration, IGraphClient graphClient)
     {
         _config = configuration;
         _client = graphClient;
         _autentifikacija = new Autentifikacija(_config);
+        _korisnikFje = new KorisnikFje();
     }
 
     [HttpPost("RegistracijaDadilja")]
@@ -179,6 +182,21 @@ public class AutentifikacijaController : ControllerBase
         {
             Console.WriteLine(e.Message);
             return BadRequest("Neuspesna prijava.");
+        }
+    }
+
+    [HttpGet("PreuzmiTipKorisnika")]
+    public ActionResult PreuzmiTipKorisnika()
+    {
+        try
+        {
+            string tip = _korisnikFje.GetCurrentUserRole(User)!;
+            return Ok(tip);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return BadRequest("Neuspesno preuzimanje tipa korisnika.");
         }
     }
 }
