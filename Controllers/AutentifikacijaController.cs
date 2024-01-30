@@ -32,9 +32,9 @@ public class AutentifikacijaController : ControllerBase
             }
 
             var query = await _client.Cypher
-                .Match("(k:Korisnik)")
+                .Match("(d:Dadilja)")
                 .Where((Dadilja d) => d.Email == dto.Email)
-                .Return(k => k.As<Dadilja>()).ResultsAsync;
+                .Return(d => d.As<Dadilja>()).ResultsAsync;
 
             if (query.Count() != 0) 
             {
@@ -56,7 +56,7 @@ public class AutentifikacijaController : ControllerBase
             };
 
             await _client.Cypher
-                .Create("(d:Dadilja {nova})")
+                .Create("(d:Dadilja $nova)")
                 .WithParam("nova", novaDadilja)
                 .ExecuteWithoutResultsAsync();
 
@@ -197,6 +197,20 @@ public class AutentifikacijaController : ControllerBase
         {
             Console.WriteLine(e.Message);
             return BadRequest("Neuspesno preuzimanje tipa korisnika.");
+        }
+    }
+    [HttpGet("PreuzmiEmailKorisnika")]
+    public ActionResult PreuzmiEmailKorisnika()
+    {
+        try
+        {
+            string email = _korisnikFje.GetCurrentUserEmail(User)!;
+            return Ok(email);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return BadRequest("Neuspesno preuzimanje emaila korisnika.");
         }
     }
 }

@@ -1,15 +1,20 @@
+using backend.Servisi.KorisnikFje;
+using Microsoft.AspNetCore.Authorization;
+
 [ApiController]
 [Route("[controller]")]
 public class OglasController : ControllerBase
 {    
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
+    private KorisnikFje _korisnikFje;
     
 
     public OglasController(IConfiguration configuration, IGraphClient graphClient)
     {
         _config = configuration;
         _client = graphClient;
+        _korisnikFje = new KorisnikFje();
     }
     
     [HttpGet("PreuzmiOglase")]
@@ -30,8 +35,9 @@ public class OglasController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
@@ -58,7 +64,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje oglasa");
         }
     }
     
@@ -76,10 +83,11 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje oglasa");
         }
     }
-    
+    [Authorize (Roles = "dadilja, korisnik, admin")]
     [HttpPut("IzmeniOpisOglasa/{id}/{opis}")]
     public async Task<ActionResult> IzmeniOpisOglasa(int id, string opis)
     {
@@ -96,18 +104,20 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena opisa oglasa.");
         }
     }
-
+    [Authorize (Roles = "dadilja, korisnik, admin")]
     [HttpDelete("ObrisiOglas/{id}")]
     public async Task<ActionResult> ObrisiOglas(int id)
     {
         try
         {
            await _client.Cypher
-           .OptionalMatch("(o:Oglas)")
+           .OptionalMatch("(dadilja:Dadilja)-[:OBJAVLJUJE]->(oglas:Oglas)")
            .Where((Oglas o) => o.Id == id)
+           .AndWhere((Dadilja dadilja) => dadilja.Email == _korisnikFje.GetCurrentUserEmail(User))
            .DetachDelete("o")
            .ExecuteWithoutResultsAsync();
             
@@ -115,7 +125,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno brisanje oglasa.");
         }
     }
     
@@ -137,8 +148,9 @@ public class OglasController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
@@ -163,7 +175,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
     
@@ -189,7 +202,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
     
@@ -215,7 +229,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
     
@@ -249,7 +264,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
     
@@ -285,7 +301,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje dadilja.");
         }
     }
 
@@ -310,9 +327,48 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
 
+    [Authorize (Roles = "dadilja, korisnik")]
+    [HttpPost("DodajOglasDadiljaKorisnik/{email}/{opis}/{plata}/{vreme}/{vestine}")]
+    public async Task<ActionResult> DodajOglasDadiljaKorisnik(string email, string opis, double plata,
+        string vreme, string vestine)
+    {
+        try
+        {
+            Oglas noviOglas = new Oglas{
+                Opis = opis,
+                Plata = plata,
+                RadnoVreme = vreme,
+                Vestine = vestine,
+                JeDadilja = true ? _korisnikFje.GetCurrentUserRole(User) == "dadilja" : false
+            };
+            if(noviOglas.JeDadilja){ 
+                await _client.Cypher
+                .Match("(dadilja:Dadilja)")
+                .Where((Dadilja dadilja) => dadilja.Email == email)
+                .Create("(dadilja)-(:OBJAVLJUJE)->(oglas:Oglas $noviOglas)")
+                .WithParam("noviOglas", noviOglas)
+                .ExecuteWithoutResultsAsync();
+            }
+            else{
+                await _client.Cypher
+                .Match("(korisnik:Korisnik)")
+                .Where((Korisnik korisnik) => korisnik.Email == email)
+                .Create("(korisnik)-(:OBJAVLJUJE)->(oglas:Oglas $noviOglas)")
+                .WithParam("noviOglas", noviOglas)
+                .ExecuteWithoutResultsAsync();
+            }            
+           return Ok("Uspesno dodat oglas.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje oglasa");
+        }
+    }
 
 }

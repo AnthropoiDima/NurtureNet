@@ -1,15 +1,20 @@
+using backend.Servisi.KorisnikFje;
+using Microsoft.AspNetCore.Authorization;
+
 [ApiController]
 [Route("[controller]")]
 public class OcenaController : ControllerBase
 {
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
+    private KorisnikFje _korisnikFje;
     
 
     public OcenaController(IConfiguration configuration, IGraphClient graphClient)
     {
         _config = configuration;
         _client = graphClient;
+        _korisnikFje = new KorisnikFje();
     }
     
 
@@ -29,9 +34,10 @@ public class OcenaController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return BadRequest("Neuspesno preuzimanje dadilja.");
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje ocena.");
         }
     }
 
@@ -54,6 +60,7 @@ public class OcenaController : ControllerBase
     //     }
     // }
     
+    [Authorize(Roles = "korisnik, dadilja, admin")]
     [HttpPut("IzmeniVrednostOcene/{id}/{vrednost}")]
     public async Task<ActionResult> IzmeniVrednostOcene(int id, int vrednost)
     {
@@ -70,7 +77,8 @@ public class OcenaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena ocene.");
         }
     }
 
@@ -127,7 +135,8 @@ public class OcenaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno ocenjivanje dadilje.");
         }
     }
 
@@ -137,23 +146,42 @@ public class OcenaController : ControllerBase
     {
         try
         {
+            if(vrednost < 1 || vrednost > 5)
+                return BadRequest("Neispravna vrednost ocene.");
             Ocena novaOcena = new Ocena{
                 Vrednost = vrednost,
                 Komentar = komentar
             };
-            await _client.Cypher
-                .Match("(dadilja: Dadilja)", "(korisnik: Korisnik)")
-                .Where((Dadilja dadilja) => dadilja.Email == emailDadilje)
-                .AndWhere((Korisnik korisnik) => korisnik.Email == emailKorisnika)
-                .Create("(dadilja)-[:OCENJUJE {Ocena:$novaOcena.Vrednost, Komentar:$novaOcena.Komentar}]->(korisnik)")
-                .WithParam("novaOcena", novaOcena)
-                .ExecuteWithoutResultsAsync();
-            
-           return Ok("Uspesno ocenjen korisnik.");
+            if(_korisnikFje.GetCurrentUserRole(User) == "dadilja"){
+                await _client.Cypher
+                    .Match("(dadilja: Dadilja)", "(korisnik: Korisnik)")
+                    .Where((Dadilja dadilja) => dadilja.Email == emailDadilje)
+                    .AndWhere((Korisnik korisnik) => korisnik.Email == emailKorisnika)
+                    .Create("(dadilja)-[:OCENJUJE {Ocena:$novaOcena.Vrednost, Komentar:$novaOcena.Komentar}]->(korisnik)")
+                    .WithParam("novaOcena", novaOcena)
+                    .ExecuteWithoutResultsAsync();
+                
+            return Ok("Uspesno ocenjen korisnik.");
+           }
+           else if(_korisnikFje.GetCurrentUserRole(User) == "korisnik"){
+                await _client.Cypher
+                    .Match("(dadilja: Dadilja)", "(korisnik: Korisnik)")
+                    .Where((Dadilja dadilja) => dadilja.Email == emailDadilje)
+                    .AndWhere((Korisnik korisnik) => korisnik.Email == emailKorisnika)
+                    .Create("(korisnik)-[:OCENJUJE {Ocena:$novaOcena.Vrednost, Komentar:$novaOcena.Komentar}]->(dadilja)")
+                    .WithParam("novaOcena", novaOcena)
+                    .ExecuteWithoutResultsAsync();
+                
+            return Ok("Uspesno ocenjena dadilja.");
+           }
+           else
+                return BadRequest("Neuspesno ocenjivanje.");
+        
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno ocenjivanje korisnika.");
         }
     }
 
@@ -177,8 +205,9 @@ public class OcenaController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje ocena dadilje.");
         }
     }
@@ -202,8 +231,9 @@ public class OcenaController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje ocena dadilje.");
         }
     }

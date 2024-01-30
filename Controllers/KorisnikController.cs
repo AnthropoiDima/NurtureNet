@@ -1,4 +1,6 @@
 using backend.Servisi.Autentifikacija;
+using backend.Servisi.KorisnikFje;
+using Microsoft.AspNetCore.Authorization;
 using StackExchange.Redis;
 
 [ApiController]
@@ -10,6 +12,7 @@ public class KorisnikController : ControllerBase
     private readonly IDatabase _redisDB;
     private readonly IConfiguration _config;
     private Autentifikacija _autentifikacija;
+    private KorisnikFje _korisnikFje;
 
     public KorisnikController(IConfiguration configuration, IGraphClient graphClient, 
     IConnectionMultiplexer redis)
@@ -19,6 +22,7 @@ public class KorisnikController : ControllerBase
         _autentifikacija = new Autentifikacija(_config);
         _redis = redis;
         _redisDB = _redis.GetDatabase();
+        _korisnikFje = new KorisnikFje();
     }
     
     [HttpGet("PreuzmiKorisnike")]
@@ -41,8 +45,9 @@ public class KorisnikController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje korisnika.");
         }
     }
@@ -75,7 +80,8 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje korisnika.");
         }
     }
     
@@ -93,18 +99,20 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje korisnika.");
         }
     }
 
-    [HttpPut("IzmeniImeKorisnika/{email}/{ime}")]
-    public async Task<ActionResult> IzmeniImeKorisnika(string email, string ime)
+    [Authorize(Roles = "korisnik")]
+    [HttpPut("IzmeniImeKorisnika/{ime}")]
+    public async Task<ActionResult> IzmeniImeKorisnika(string ime)
     {
         try
         {
            await _client.Cypher
            .Match("(d:korisnik)")
-           .Where((Korisnik k) => k.Email == email)
+           .Where((Korisnik k) => k.Email == _korisnikFje.GetCurrentUserEmail(User))
            .Set("k.Ime = $ime").
            WithParam("ime", ime)
            .ExecuteWithoutResultsAsync();
@@ -113,18 +121,20 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena korisnika.");
         }
     }
 
-    [HttpDelete("ObrisiKorisnika/{email}")]
-    public async Task<ActionResult> ObrisiKorisnika(string email)
+    [Authorize(Roles = "korisnik, admin")]
+    [HttpDelete("ObrisiKorisnika")]
+    public async Task<ActionResult> ObrisiKorisnika()
     {
         try
         {
            await _client.Cypher
            .OptionalMatch("(k:Korisnik)")
-           .Where((Korisnik k) => k.Email == email)
+           .Where((Korisnik k) => k.Email == _korisnikFje.GetCurrentUserEmail(User))
            .DetachDelete("k")
            .ExecuteWithoutResultsAsync();
             
@@ -132,10 +142,11 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno brisanje profila.");
         }
     }
-
+    [Authorize(Roles = "korisnik, admin")]
     [HttpPost("DodajOglasKorisnik/{email}/{opis}/{plata}/{vreme}/{vestine}")]
     public async Task<ActionResult> DodajOglasKorisnik(string email, string opis, double plata,
         string vreme, string vestine)
@@ -160,18 +171,19 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje oglasa.");
         }
     }
-    
-    [HttpPut("RezervisiOglas/{email}/{oglasId}")]
-    public async Task<ActionResult> RezervisiOglas(string email, int oglasId)
+    [Authorize(Roles = "korisnik, admin")]
+    [HttpPut("RezervisiOglas{oglasId}")]
+    public async Task<ActionResult> RezervisiOglas(int oglasId)
     {
         try
         {
            await _client.Cypher
            .Match("(korisnik:Korisnik)", "(oglas:Oglas)")
-           .Where((Korisnik korisnik) => korisnik.Email == email)
+           .Where((Korisnik korisnik) => korisnik.Email == _korisnikFje.GetCurrentUserEmail(User))
            .AndWhere((Oglas oglas) => oglas.Id == oglasId)
            .Create("(korisnik)-[:SE_PRIJAVLJUJE]->(oglas)")
            .ExecuteWithoutResultsAsync();
@@ -180,7 +192,8 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna prijava na oglas.");
         }
     }
 }

@@ -3,6 +3,8 @@ using StackExchange.Redis;
 using NRedisStack;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using backend.Servisi.KorisnikFje;
+using Microsoft.AspNetCore.Authorization;
 
 [ApiController]
 [Route("[controller]")] 
@@ -13,6 +15,7 @@ public class DadiljaController : ControllerBase
     private readonly IConnectionMultiplexer _redis;
     private readonly IDatabase _redisDB;
     private Autentifikacija _autentifikacija;
+    private KorisnikFje _korisnikFje;
 
     public DadiljaController(IConfiguration configuration, IGraphClient graphClient, 
     IConnectionMultiplexer redis)
@@ -22,6 +25,7 @@ public class DadiljaController : ControllerBase
         _autentifikacija = new Autentifikacija(_config);
         _redis = redis;
         _redisDB = _redis.GetDatabase();
+        _korisnikFje = new KorisnikFje();
     }
     
     [HttpGet("PreuzmiDadilje")]
@@ -40,14 +44,13 @@ public class DadiljaController : ControllerBase
                     d.As<Dadilja>().BrojTelefona                                    
                 });
 
-            _redisDB.StringSet("foo", "bar");
-
             var result = await query.ResultsAsync;
             return Ok(result);
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            Console.WriteLine(e.Message);
+            return BadRequest("Neuspesno preuzimanje podataka o dadiljama.");
         }
     }
 
@@ -66,22 +69,16 @@ public class DadiljaController : ControllerBase
                     .Where((Dadilja d) => d.Email == email)
                     .Return(d => d.As<Dadilja>());
                 var result = await query.ResultsAsync;
-                JObject jObject = JObject.Parse(JsonConvert.SerializeObject(result));
 
                 json = JsonConvert.SerializeObject(result);
-                //await _redisDB.StringSetAsync(kljuc, json);
-                return Ok(jObject["data"]);
+                await _redisDB.StringSetAsync(kljuc, json);
+                return Ok(result);
             }
             else{
                 List<Dadilja> dadiljaList = JsonConvert.DeserializeObject<List<Dadilja>>(json);
                 Dadilja dadilja = dadiljaList.FirstOrDefault();
                 return Ok(dadilja);
             }
-
-            // var query = await _client.Cypher
-            //     .Match("(d:Dadilja)")
-            //     .Where((Dadilja d) => d.Email == email)
-            //     .Return(d => d.As<Dadilja>()).ResultsAsync;
         }
         catch (Exception e)
         {
@@ -123,7 +120,7 @@ public class DadiljaController : ControllerBase
         }
     }
 
-    [HttpPost("DodajDadiljuFromBody")]
+    [HttpPost("DodajDadiljuFromBody")] // ovu fju mozemo da stavimo samo kao admin
     public async Task<ActionResult> DodajDadiljuFromBody([FromBody] Dadilja novaDadilja)
     {
         try
@@ -140,36 +137,42 @@ public class DadiljaController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-
-    [HttpPut("IzmeniImeDadilje/{email}/{ime}")]
-    public async Task<ActionResult> IzmeniImeDadilje(string email, string ime)
+    [Authorize (Roles = "dadilja, admin")]
+    [HttpPut("IzmeniImeDadilje/{ime}")]
+    public async Task<ActionResult> IzmeniImeDadilje(string ime)
     {
         try
-        {
-           await _client.Cypher
+        {   
+            string json;
+            string email = _korisnikFje.GetCurrentUserEmail(User);
+            string kljuc = "Dadilja:" + email;
+           var result = await _client.Cypher
            .Match("(d:Dadilja)")
            .Where((Dadilja d) => d.Email == email)
            .Set("d.Ime = $ime")
            .WithParam("ime", ime)
-           .ExecuteWithoutResultsAsync();
-            
+           .Return(d => d.As<Dadilja>()).ResultsAsync;
+
+            json = JsonConvert.SerializeObject(result);
+            await _redisDB.StringSetAsync(kljuc, json);
            return Ok("Uspesno izmenjena dadilja.");
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena profila.");
         }
     }
-    
-    [HttpPut("IzmeniLozinku/{email}/{novaLozinka}")]
-    public async Task<ActionResult> IzmeniLozinku(string email, string novaLozinka)
+    [Authorize (Roles = "dadilja, admin")]
+    [HttpPut("IzmeniLozinku")]
+    public async Task<ActionResult> IzmeniLozinku([FromBody] string novaLozinka)
     {
         try
         {
             novaLozinka = _autentifikacija.HesirajPassword(novaLozinka);
            await _client.Cypher
            .Match("(dadilja:Dadilja)")
-           .Where((Dadilja dadilja) => dadilja.Email == email)
+           .Where((Dadilja dadilja) => dadilja.Email == _korisnikFje.GetCurrentUserEmail(User))
            .Set("dadilja.Password = $novaLozinka")
            .WithParam("novaLozinka", novaLozinka)
            .ExecuteWithoutResultsAsync();
@@ -178,10 +181,11 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno izmenjena lozinka.");
         }
     }
-
+    [Authorize (Roles = "dadilja, admin")]
     [HttpDelete("ObrisiDadilju/{email}")]
     public async Task<ActionResult> ObrisiDadilju(string email)
     {
@@ -189,20 +193,21 @@ public class DadiljaController : ControllerBase
         {
            await _client.Cypher
            .OptionalMatch("(d:Dadilja)")
-           .Where((Dadilja d) => d.Email == email)
+           .Where((Dadilja d) => d.Email == _korisnikFje.GetCurrentUserEmail(User))
            .DetachDelete("d")
            .ExecuteWithoutResultsAsync();
             
-           return Ok("Uspesno obrisana dadilja.");
+           return Ok("Uspesno obrisan nalog.");
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno brisanje naloga.");
         }
     }
-
-    [HttpPost("DodajOglasDadilja/{email}/{opis}/{plata}/{vreme}/{vestine}")]
-    public async Task<ActionResult> DodajOglasDadilja(string email, string opis, double plata,
+    [Authorize (Roles = "dadilja, admin")]
+    [HttpPost("DodajOglasDadilja/{opis}/{plata}/{vreme}/{vestine}")]
+    public async Task<ActionResult> DodajOglasDadilja(string opis, double plata,
         string vreme, string vestine)
     {
         try
@@ -216,7 +221,7 @@ public class DadiljaController : ControllerBase
             };
             await _client.Cypher
                 .Match("(dadilja:Dadilja)")
-                .Where((Dadilja dadilja) => dadilja.Email == email)
+                .Where((Dadilja dadilja) => dadilja.Email == _korisnikFje.GetCurrentUserEmail(User))
                 .Create("(dadilja)-[:OBJAVLJUJE]->(oglas:Oglas $noviOglas)")
                 .WithParam("noviOglas", noviOglas)
                 .ExecuteWithoutResultsAsync();
@@ -225,18 +230,19 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje oglasa.");
         }
     }
-    
-    [HttpPut("RezervisiOglas/{email}/{oglasId}")]
-    public async Task<ActionResult> RezervisiOglas(string email, int oglasId)
+    [Authorize (Roles = "dadilja, admin")]
+    [HttpPut("RezervisiOglas/{oglasId}")] //proveri s Mikom kako odgovara
+    public async Task<ActionResult> RezervisiOglas(int oglasId)
     {
         try
         {
            await _client.Cypher
            .Match("(dadilja:Dadilja)", "(oglas:Oglas)")
-           .Where((Dadilja dadilja) => dadilja.Email == email)
+           .Where((Dadilja dadilja) => dadilja.Email == _korisnikFje.GetCurrentUserEmail(User))
            .AndWhere((Oglas oglas) => oglas.Id == oglasId)
            .Create("(dadilja)-[:SE_PRIJAVLJUJE]->(oglas)")
            .ExecuteWithoutResultsAsync();
@@ -245,18 +251,19 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna prijava na oglas.");
         }
     }
-
-    [HttpGet("PreuzmiPrijavljeneOglase/{email}")]
-    public async Task<ActionResult> PreuzmiPrijavljeneOglase(string email)
+    [Authorize (Roles = "dadilja, admin")]
+    [HttpGet("PreuzmiPrijavljeneOglase")]
+    public async Task<ActionResult> PreuzmiPrijavljeneOglase()
     {
         try
         {
             var query = _client.Cypher
             .OptionalMatch("(dadilja:Dadilja)-[:SE_PRIJAVLJUJE]->(oglas:Oglas)")
-            .Where((Dadilja dadilja) => dadilja.Email == email)
+            .Where((Dadilja dadilja) => dadilja.Email == _korisnikFje.GetCurrentUserEmail(User))
             .Return(oglas => new
             {
                 oglas.As<Oglas>().Opis,
@@ -270,7 +277,8 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje oglasa na koje ste prijavljeni.");
         }
     }
 }

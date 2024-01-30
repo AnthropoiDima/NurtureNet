@@ -1,5 +1,6 @@
+using System.Text.Json.Serialization;
+
 namespace backend.Model;
-// [JsonArray]
 public class Dadilja
 {
     public String Ime { get; set; } = null!;
