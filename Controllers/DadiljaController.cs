@@ -43,7 +43,7 @@ public class DadiljaController : ControllerBase
                     d.As<Dadilja>().Pol,
                     d.As<Dadilja>().BrojTelefona                                    
                 });
-
+            
             var result = await query.ResultsAsync;
             return Ok(result);
         }
@@ -266,6 +266,7 @@ public class DadiljaController : ControllerBase
             .Where((Dadilja dadilja) => dadilja.Email == _korisnikFje.GetCurrentUserEmail(User))
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,

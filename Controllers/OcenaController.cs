@@ -82,11 +82,12 @@ public class OcenaController : ControllerBase
         }
     }
 
-    [HttpDelete("ObrisiOcenu/{id}")]
+    [HttpDelete("ObrisiOcenu/{id}"), Authorize(Roles = "admin, korisnik, dadilja")]
     public async Task<ActionResult> ObrisiOcenu(int id)
     {
         try
         {
+
            await _client.Cypher
            .OptionalMatch("(o:Ocena)")
            .Where((Ocena o) => o.Id == id)
@@ -97,7 +98,8 @@ public class OcenaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno brisanje ocene.");
         }
     }
     
@@ -185,6 +187,66 @@ public class OcenaController : ControllerBase
         }
     }
 
+
+    [HttpPost("Oceni/{vrednost}/{komentar}/{idOglasa}")]
+    public async Task<ActionResult> Oceni(int vrednost, string komentar, int idOglasa)
+    {
+        try
+        {
+            if(vrednost < 1 || vrednost > 5)
+                return BadRequest("Neispravna vrednost ocene.");
+            Ocena novaOcena = new Ocena{
+                Vrednost = vrednost,
+                Komentar = komentar
+            };
+            string emailCurrent = _korisnikFje.GetCurrentUserEmail(User)!;
+            if(_korisnikFje.GetCurrentUserRole(User) == "dadilja"){
+                var query = await _client.Cypher
+                    .Match("(oglas: Oglas), (korisnik: Korisnik)")
+                    .Where((Oglas oglas) => oglas.Id == idOglasa)
+                    .Return(oglas => new{
+                        oglas.As<Oglas>().Korisnik!.Email
+                    }).ResultsAsync;
+
+                await _client.Cypher
+                    .Match("(dadilja: Dadilja)", "(korisnik: Korisnik)")
+                    .Where((Dadilja dadilja) => dadilja.Email == emailCurrent)
+                    .AndWhere((Korisnik korisnik) => korisnik.Email == emailCurrent)
+                    .Create("(dadilja)-[:OCENJUJE {Ocena:$novaOcena.Vrednost, Komentar:$novaOcena.Komentar}]->(korisnik)")
+                    .WithParam("novaOcena", novaOcena)
+                    .ExecuteWithoutResultsAsync();
+                
+                return Ok("Uspesno ocenjen korisnik.");
+            }
+           else if(_korisnikFje.GetCurrentUserRole(User) == "korisnik"){
+            var query = await _client.Cypher
+                    .Match("(oglas: Oglas)")
+                    .Where((Oglas oglas) => oglas.Id == idOglasa)
+                    .Return(oglas => new{
+                        oglas.As<Oglas>().Dadilja!.Email
+                    }).ResultsAsync;
+                string email = query.FirstOrDefault().Email;
+                Console.WriteLine(email);
+
+                await _client.Cypher
+                    .Match("(dadilja: Dadilja)", "(korisnik: Korisnik)")
+                    .Where((Dadilja dadilja) => dadilja.Email == email)
+                    .AndWhere((Korisnik korisnik) => korisnik.Email == emailCurrent)
+                    .Create("(korisnik)-[:OCENJUJE {Ocena:$novaOcena.Vrednost, Komentar:$novaOcena.Komentar}]->(dadilja)")
+                    .WithParam("novaOcena", novaOcena)
+                    .ExecuteWithoutResultsAsync();
+                
+                return Ok("Uspesno ocenjena dadilja.");
+            }
+              else
+                return BadRequest("Neuspesno ocenjivanje.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno ocenjivanje.");
+        }
+    }
 
     [HttpGet("PreuzmiOceneDadilje/{email}")]
     public async Task<ActionResult> PreuzmiOceneDadilje(string email)   

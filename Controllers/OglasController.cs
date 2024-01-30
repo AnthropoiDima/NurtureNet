@@ -129,7 +129,7 @@ public class OglasController : ControllerBase
             return BadRequest("Neuspesno brisanje oglasa.");
         }
     }
-    
+    [Authorize(Roles = "dadilja, korisnik, admin")]
     [HttpGet("PreuzmiOglaseDadilja")]
     public async Task<ActionResult> PreuzmiOglaseDadilja()
     {
@@ -139,6 +139,7 @@ public class OglasController : ControllerBase
             .Where((Oglas oglas) => oglas.JeDadilja == true)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -164,6 +165,7 @@ public class OglasController : ControllerBase
             .Where((Oglas oglas) => oglas.JeDadilja == false)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -191,6 +193,7 @@ public class OglasController : ControllerBase
             .AndWhere((Dadilja dadilja) => dadilja.Grad == grad)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -218,6 +221,7 @@ public class OglasController : ControllerBase
             .AndWhere((Korisnik korisnik) => korisnik.Grad == grad)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -253,6 +257,7 @@ public class OglasController : ControllerBase
             .WithParam("sveVestine", sveVestine)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -316,6 +321,7 @@ public class OglasController : ControllerBase
             .Where((Dadilja dadilja) => dadilja.Email == email)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -333,8 +339,8 @@ public class OglasController : ControllerBase
     }
 
     [Authorize (Roles = "dadilja, korisnik")]
-    [HttpPost("DodajOglasDadiljaKorisnik/{email}/{opis}/{plata}/{vreme}/{vestine}")]
-    public async Task<ActionResult> DodajOglasDadiljaKorisnik(string email, string opis, double plata,
+    [HttpPost("DodajOglasDadiljaKorisnik{opis}/{plata}/{vreme}/{vestine}")]
+    public async Task<ActionResult> DodajOglasDadiljaKorisnik(string opis, double plata,
         string vreme, string vestine)
     {
         try
@@ -346,19 +352,21 @@ public class OglasController : ControllerBase
                 Vestine = vestine,
                 JeDadilja = true ? _korisnikFje.GetCurrentUserRole(User) == "dadilja" : false
             };
-            if(noviOglas.JeDadilja){ 
+            string email = _korisnikFje.GetCurrentUserEmail(User)!;
+            if(noviOglas.JeDadilja){
                 await _client.Cypher
                 .Match("(dadilja:Dadilja)")
                 .Where((Dadilja dadilja) => dadilja.Email == email)
-                .Create("(dadilja)-(:OBJAVLJUJE)->(oglas:Oglas $noviOglas)")
+                .Create("(dadilja)-[:OBJAVLJUJE]->(oglas:Oglas $noviOglas)")
                 .WithParam("noviOglas", noviOglas)
                 .ExecuteWithoutResultsAsync();
             }
             else{
+
                 await _client.Cypher
                 .Match("(korisnik:Korisnik)")
                 .Where((Korisnik korisnik) => korisnik.Email == email)
-                .Create("(korisnik)-(:OBJAVLJUJE)->(oglas:Oglas $noviOglas)")
+                .Create("(korisnik)-[:OBJAVLJUJE]->(oglas:Oglas $noviOglas)")
                 .WithParam("noviOglas", noviOglas)
                 .ExecuteWithoutResultsAsync();
             }            
@@ -366,8 +374,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
-            return BadRequest("Neuspesno dodavanje oglasa");
+            Console.WriteLine(ex.StackTrace);
+            return BadRequest(ex);
         }
     }
 
