@@ -41,8 +41,9 @@ public class KorisnikController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje korisnika.");
         }
     }
@@ -75,7 +76,8 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje korisnika.");
         }
     }
     
@@ -93,7 +95,8 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje korisnika.");
         }
     }
 
@@ -113,7 +116,8 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena korisnika.");
         }
     }
 
@@ -132,7 +136,8 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno brisanje korisnika.");
         }
     }
 
@@ -160,7 +165,8 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje oglasa.");
         }
     }
     
@@ -180,7 +186,8 @@ public class KorisnikController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna prijava na oglas.");
         }
     }
 }

@@ -33,8 +33,9 @@ public class OglasController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
@@ -61,7 +62,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
     
@@ -79,7 +81,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
     
@@ -99,7 +102,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
 
@@ -118,7 +122,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
     
@@ -131,6 +136,7 @@ public class OglasController : ControllerBase
             .Where((Oglas oglas) => oglas.JeDadilja == true)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -140,7 +146,7 @@ public class OglasController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             return BadRequest("Neuspesno preuzimanje oglasa.");
         }
@@ -155,6 +161,7 @@ public class OglasController : ControllerBase
             .Where((Oglas oglas) => oglas.JeDadilja == false)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -166,7 +173,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
     
@@ -181,6 +189,7 @@ public class OglasController : ControllerBase
             .AndWhere((Dadilja dadilja) => dadilja.Grad == grad)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -192,7 +201,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
     
@@ -207,6 +217,7 @@ public class OglasController : ControllerBase
             .AndWhere((Korisnik korisnik) => korisnik.Grad == grad)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -218,7 +229,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
     
@@ -241,6 +253,7 @@ public class OglasController : ControllerBase
             .WithParam("sveVestine", sveVestine)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -252,7 +265,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
     
@@ -288,7 +302,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
 
@@ -302,6 +317,7 @@ public class OglasController : ControllerBase
             .Where((Dadilja dadilja) => dadilja.Email == email)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -313,7 +329,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
 
@@ -335,7 +352,7 @@ public class OglasController : ControllerBase
                 await _client.Cypher
                 .Match("(dadilja:Dadilja)")
                 .Where((Dadilja dadilja) => dadilja.Email == email)
-                .Create("(dadilja)-(:OBJAVLJUJE)->(oglas:Oglas $noviOglas)")
+                .Create("(dadilja)-[:OBJAVLJUJE]->(oglas:Oglas $noviOglas)")
                 .WithParam("noviOglas", noviOglas)
                 .ExecuteWithoutResultsAsync();
             }
@@ -343,7 +360,7 @@ public class OglasController : ControllerBase
                 await _client.Cypher
                 .Match("(korisnik:Korisnik)")
                 .Where((Korisnik korisnik) => korisnik.Email == email)
-                .Create("(korisnik)-(:OBJAVLJUJE)->(oglas:Oglas $noviOglas)")
+                .Create("(korisnik)-[:OBJAVLJUJE]->(oglas:Oglas $noviOglas)")
                 .WithParam("noviOglas", noviOglas)
                 .ExecuteWithoutResultsAsync();
             }            
@@ -351,7 +368,8 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
         }
     }
 

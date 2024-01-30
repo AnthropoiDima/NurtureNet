@@ -29,8 +29,9 @@ public class OcenaController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje dadilja.");
         }
     }
@@ -59,6 +60,11 @@ public class OcenaController : ControllerBase
     {
         try
         {
+            if (vrednost < 1 || vrednost > 5)
+            {
+                return BadRequest("Vrednost ocene mora biti izmedju 1 i 5.");
+            }
+
            await _client.Cypher
            .Match("(o:Ocena)")
            .Where((Ocena o) => o.Id == id)
@@ -70,7 +76,8 @@ public class OcenaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena ocene.");
         }
     }
 
@@ -89,7 +96,8 @@ public class OcenaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno brisanje ocene.");
         }
     }
     
@@ -127,7 +135,8 @@ public class OcenaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno ocenjivanje dadilje.");
         }
     }
 
@@ -153,7 +162,8 @@ public class OcenaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno ocenjivanje korisnika.");
         }
     }
 
@@ -177,8 +187,9 @@ public class OcenaController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje ocena dadilje.");
         }
     }
@@ -202,8 +213,9 @@ public class OcenaController : ControllerBase
             var result = await query.ResultsAsync;
             return Ok(result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje ocena dadilje.");
         }
     }

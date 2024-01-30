@@ -1,6 +1,7 @@
 using backend.Servisi.Autentifikacija;
 using StackExchange.Redis;
 using NRedisStack;
+using Newtonsoft.Json;
 
 [ApiController]
 [Route("[controller]")] 
@@ -38,14 +39,15 @@ public class DadiljaController : ControllerBase
                     d.As<Dadilja>().BrojTelefona                                    
                 });
 
-            _redisDB.StringSet("foo", "bar");
+
 
             var result = await query.ResultsAsync;
             return Ok(result);
         }
         catch (Exception e)
         {
-            return BadRequest(e.Message);
+            Console.WriteLine(e.Message);
+            return BadRequest("Neuspesno preuzimanje dadilja.");
         }
     }
 
@@ -54,13 +56,26 @@ public class DadiljaController : ControllerBase
     {
         try
         {
-            
-            var query = await _client.Cypher
-                .Match("(d:Dadilja)")
-                .Where((Dadilja d) => d.Email == email)
-                .Return(d => d.As<Dadilja>()).ResultsAsync;
+            string json;
+            string kljuc = "Dadilja:" + email;
+            json = await _redisDB.StringGetAsync(kljuc);
+            Console.WriteLine(json);
+            if (string.IsNullOrEmpty(json))
+            {
+                var query = _client.Cypher.Match("(d:Dadilja)")
+                    .Where((Dadilja d) => d.Email == email)
+                    .Return(d => d.As<Dadilja>());
+                var result = await query.ResultsAsync;
 
-            return Ok(query);
+                json = JsonConvert.SerializeObject(result);
+                await _redisDB.StringSetAsync(kljuc, json, expiry: TimeSpan.FromMinutes(1));
+                return Ok(result);
+            }
+            else{
+                List<Dadilja> dadiljaList = JsonConvert.DeserializeObject<List<Dadilja>>(json);
+                Dadilja dadilja = dadiljaList.FirstOrDefault();
+                return Ok(dadilja);
+            }
         }
         catch (Exception e)
         {
@@ -98,7 +113,8 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje dadilje.");
         }
     }
 
@@ -116,7 +132,8 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje dadilje.");
         }
     }
 
@@ -125,18 +142,23 @@ public class DadiljaController : ControllerBase
     {
         try
         {
-           await _client.Cypher
+           string json;
+           string kljuc = "Dadilja:" + email;
+           var result = await _client.Cypher
            .Match("(d:Dadilja)")
            .Where((Dadilja d) => d.Email == email)
            .Set("d.Ime = $ime")
            .WithParam("ime", ime)
-           .ExecuteWithoutResultsAsync();
-            
+           .Return(d => d.As<Dadilja>()).ResultsAsync;
+
+            json = JsonConvert.SerializeObject(result);
+            await _redisDB.StringSetAsync(kljuc, json, expiry: TimeSpan.FromMinutes(1));
            return Ok("Uspesno izmenjena dadilja.");
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena dadilje.");
         }
     }
     
@@ -157,7 +179,8 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena lozinke.");
         }
     }
 
@@ -176,7 +199,8 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno brisanje dadilje.");
         }
     }
 
@@ -204,7 +228,8 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno dodavanje oglasa.");
         }
     }
     
@@ -224,7 +249,8 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna prijava na oglas.");
         }
     }
 
@@ -238,6 +264,7 @@ public class DadiljaController : ControllerBase
             .Where((Dadilja dadilja) => dadilja.Email == email)
             .Return(oglas => new
             {
+                oglas.As<Oglas>().Id,
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
@@ -249,7 +276,8 @@ public class DadiljaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
 }
