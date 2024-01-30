@@ -73,8 +73,8 @@ public class DadiljaController : ControllerBase
             }
             else{
                 List<Dadilja> dadiljaList = JsonConvert.DeserializeObject<List<Dadilja>>(json);
-                Dadilja dadilja = dadiljaList.FirstOrDefault();
-                return Ok(dadilja);
+                //Dadilja dadilja = dadiljaList.FirstOrDefault();
+                return Ok(dadiljaList);
             }
         }
         catch (Exception e)
