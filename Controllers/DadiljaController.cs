@@ -68,7 +68,7 @@ public class DadiljaController : ControllerBase
                 var result = await query.ResultsAsync;
 
                 json = JsonConvert.SerializeObject(result);
-                await _redisDB.StringSetAsync(kljuc, json, expiry: TimeSpan.FromMinutes(1));
+                await _redisDB.StringSetAsync(kljuc, json, expiry: new TimeSpan(0, 10, 0));
                 return Ok(result);
             }
             else{
@@ -152,7 +152,7 @@ public class DadiljaController : ControllerBase
            .Return(d => d.As<Dadilja>()).ResultsAsync;
 
             json = JsonConvert.SerializeObject(result);
-            await _redisDB.StringSetAsync(kljuc, json, expiry: TimeSpan.FromMinutes(1));
+            await _redisDB.StringSetAsync(kljuc, json, new TimeSpan(0, 10, 0));
            return Ok("Uspesno izmenjena dadilja.");
         }
         catch (Exception ex)
@@ -189,12 +189,14 @@ public class DadiljaController : ControllerBase
     {
         try
         {
+            string kljuc = "Dadilja:" + email;
            await _client.Cypher
            .OptionalMatch("(d:Dadilja)")
            .Where((Dadilja d) => d.Email == email)
            .DetachDelete("d")
            .ExecuteWithoutResultsAsync();
             
+            await _redisDB.KeyDeleteAsync(kljuc);
            return Ok("Uspesno obrisana dadilja.");
         }
         catch (Exception ex)
@@ -259,6 +261,8 @@ public class DadiljaController : ControllerBase
     {
         try
         {
+            HashEntry[] jsonSet = await _redisDB.HashGetAllAsync("PrijavljeniOglasi:" + email);
+            if(jsonSet.Length == 0){
             var query = _client.Cypher
             .OptionalMatch("(dadilja:Dadilja)-[:SE_PRIJAVLJUJE]->(oglas:Oglas)")
             .Where((Dadilja dadilja) => dadilja.Email == email)
@@ -272,11 +276,26 @@ public class DadiljaController : ControllerBase
             });
             
             var result = await query.ResultsAsync;
+            List<HashEntry> hashEntries = new List<HashEntry>();
+            foreach (var oglas in result)
+            {
+                hashEntries.Add(new HashEntry("Oglas:"+ oglas.Id, JsonConvert.SerializeObject(oglas)));
+            }
+            await _redisDB.HashSetAsync("PrijavljeniOglasi:" + email, hashEntries.ToArray());
             return Ok(result);
+            }
+            else{
+                List<Oglas> oglasList = new List<Oglas>();
+                foreach (var json in jsonSet)
+                {
+                    oglasList.Add(JsonConvert.DeserializeObject<Oglas>(json.Value));
+                }
+                return Ok(oglasList);
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            Console.WriteLine(ex.Message + " " + ex.StackTrace);
             return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }

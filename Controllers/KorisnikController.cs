@@ -1,4 +1,5 @@
 using backend.Servisi.Autentifikacija;
+using Newtonsoft.Json;
 using StackExchange.Redis;
 
 [ApiController]
@@ -40,6 +41,39 @@ public class KorisnikController : ControllerBase
             
             var result = await query.ResultsAsync;
             return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno preuzimanje korisnika.");
+        }
+    }
+
+    [HttpGet("PreuzmiKorisnikaPoEmailu/{email}")]
+    public async Task<ActionResult> PreuzmiKorisnikaPoEmailu(string email)
+    {
+        try
+        {
+            string json;
+            string kljuc = "Korisnik:" + email;
+            json = await _redisDB.StringGetAsync(kljuc);
+            Console.WriteLine(json);
+            if(string.IsNullOrEmpty(json))
+            {
+                var query = _client.Cypher.Match("(k:Korisnik)")
+                    .Where((Korisnik k) => k.Email == email)
+                    .Return(k => k.As<Korisnik>());
+                var result = await query.ResultsAsync;
+
+                json = JsonConvert.SerializeObject(result);
+                await _redisDB.StringSetAsync(kljuc, json, expiry: new TimeSpan(0, 10, 0));
+                return Ok(result);
+            }
+            else{
+                List<Korisnik> result = JsonConvert.DeserializeObject<List<Korisnik>>(json);
+                return Ok(result);
+            }
+            
         }
         catch (Exception ex)
         {
@@ -105,14 +139,18 @@ public class KorisnikController : ControllerBase
     {
         try
         {
-           await _client.Cypher
-           .Match("(d:korisnik)")
-           .Where((Korisnik k) => k.Email == email)
-           .Set("k.Ime = $ime").
-           WithParam("ime", ime)
-           .ExecuteWithoutResultsAsync();
-            
-           return Ok("Uspesno izmenjen korisnik.");
+            string json;
+           string kljuc = "Korisnik:" + email;
+           var result = await _client.Cypher
+           .Match("(d:Korisnik)")
+           .Where((Korisnik d) => d.Email == email)
+           .Set("d.Ime = $ime")
+           .WithParam("ime", ime)
+           .Return(d => d.As<Korisnik>()).ResultsAsync;
+
+            json = JsonConvert.SerializeObject(result);
+            await _redisDB.StringSetAsync(kljuc, json, new TimeSpan(0, 10, 0));
+           return Ok("Uspesno izmenjena dadilja.");
         }
         catch (Exception ex)
         {
@@ -126,12 +164,14 @@ public class KorisnikController : ControllerBase
     {
         try
         {
+            string kljuc = "Korisnik:" + email;
            await _client.Cypher
            .OptionalMatch("(k:Korisnik)")
            .Where((Korisnik k) => k.Email == email)
            .DetachDelete("k")
            .ExecuteWithoutResultsAsync();
             
+            await _redisDB.KeyDeleteAsync(kljuc);
            return Ok("Uspesno obrisan korisnik.");
         }
         catch (Exception ex)
@@ -157,7 +197,7 @@ public class KorisnikController : ControllerBase
             await _client.Cypher
                 .Match("(korisnik:Korisnik)")
                 .Where((Korisnik korisnik) => korisnik.Email == email)
-                .Create("(korisnik)-(:OBJAVLJUJE)->(oglas:Oglas $noviOglas)")
+                .Create("(korisnik)-[:OBJAVLJUJE]->(oglas:Oglas $noviOglas)")
                 .WithParam("noviOglas", noviOglas)
                 .ExecuteWithoutResultsAsync();
             

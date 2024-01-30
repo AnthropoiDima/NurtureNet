@@ -107,18 +107,6 @@ public class OcenaController : ControllerBase
     {
         try
         {
-            // var dadilj = await _client.Cypher.Match("(d:Dadilja)")
-            //     .Where((Dadilja d) => d.Email == emailDadilje)
-            //     .Return<Dadilja>(d => d.As<Dadilja>()).ResultsAsync;
-
-            // Dadilja dadilja = dadilj.FirstOrDefault();
-        
-            // var korisn = await _client.Cypher.Match("(d:Korisnik)")
-            //     .Where((Korisnik d) => d.Email == emailKorisnika)
-            //     .Return<Korisnik>(d => d.As<Korisnik>()).ResultsAsync;
-
-            // Korisnik korisnik = korisn.FirstOrDefault();
-
             Ocena novaOcena = new Ocena{
                 Vrednost = vrednost,
                 Komentar = komentar

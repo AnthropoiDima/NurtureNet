@@ -5,6 +5,7 @@ using Swashbuckle.AspNetCore.Filters;
 using NRedisStack;
 using StackExchange.Redis;
 using System.Net;
+using backend.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +63,8 @@ builder.Services.AddSingleton<IGraphClient>(options => {
     return neo4jClient;
 });
 
+builder.Services.AddSignalR();
+
 
 var app = builder.Build();
 
@@ -79,5 +82,6 @@ app.UseCors("CORS");
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/hub");
 
 app.Run();
