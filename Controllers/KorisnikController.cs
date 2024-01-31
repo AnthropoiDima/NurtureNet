@@ -192,7 +192,8 @@ public class KorisnikController : ControllerBase
                 Plata = plata,
                 RadnoVreme = vreme,
                 Vestine = vestine,
-                JeDadilja = false
+                JeDadilja = false,
+                Oglasivac = email
             };
             await _client.Cypher
                 .Match("(korisnik:Korisnik)")

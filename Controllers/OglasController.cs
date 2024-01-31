@@ -41,7 +41,7 @@ public class OglasController : ControllerBase
     }
 
     [HttpPost("DodajOglas/{email}/{opis}/{plata}/{vreme}/{vestine}/{jeDadilja}")]
-    public async Task<ActionResult> DodajOglas(string opis, double plata,
+    public async Task<ActionResult> DodajOglas(string email, string opis, double plata,
         string vreme, string vestine, bool jeDadilja)
     {
         try
@@ -51,7 +51,8 @@ public class OglasController : ControllerBase
                 Plata = plata,
                 RadnoVreme = vreme,
                 Vestine = vestine,
-                JeDadilja = jeDadilja
+                JeDadilja = jeDadilja,
+                Oglasivac = email
             };
             await _client.Cypher
            .Create("(oglas:Oglas $noviOglas)")

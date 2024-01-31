@@ -217,7 +217,8 @@ public class DadiljaController : ControllerBase
                 Plata = plata,
                 RadnoVreme = vreme,
                 Vestine = vestine,
-                JeDadilja = true
+                JeDadilja = true,
+                Oglasivac = email
             };
             await _client.Cypher
                 .Match("(dadilja:Dadilja)")
@@ -272,7 +273,8 @@ public class DadiljaController : ControllerBase
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
-                oglas.As<Oglas>().Vestine
+                oglas.As<Oglas>().Vestine,
+                // oglas.As<Oglas>().Oglasivac
             });
             
             var result = await query.ResultsAsync;
