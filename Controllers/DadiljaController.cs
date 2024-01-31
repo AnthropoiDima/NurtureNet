@@ -275,7 +275,7 @@ public class DadiljaController : ControllerBase
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
                 oglas.As<Oglas>().Vestine,
-                // oglas.As<Oglas>().Oglasivac
+                oglas.As<Oglas>().Oglasivac
             });
             
             var result = await query.ResultsAsync;
