@@ -31,7 +31,8 @@ public class OglasController : ControllerBase
                 p.As<Oglas>().Opis,
                 p.As<Oglas>().Plata,
                 p.As<Oglas>().RadnoVreme,
-                p.As<Oglas>().Vestine
+                p.As<Oglas>().Vestine,
+                p.As<Oglas>().Oglasivac
 
             });
             
@@ -150,7 +151,8 @@ public class OglasController : ControllerBase
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
-                oglas.As<Oglas>().Vestine
+                oglas.As<Oglas>().Vestine,
+                oglas.As<Oglas>().Oglasivac
             });
             
             var result = await query.ResultsAsync;
@@ -158,6 +160,7 @@ public class OglasController : ControllerBase
         }
         catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return BadRequest("Neuspesno preuzimanje oglasa.");
         }
     }
@@ -175,7 +178,8 @@ public class OglasController : ControllerBase
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
-                oglas.As<Oglas>().Vestine
+                oglas.As<Oglas>().Vestine,
+                oglas.As<Oglas>().Oglasivac
             });
             
             var result = await query.ResultsAsync;
@@ -203,7 +207,8 @@ public class OglasController : ControllerBase
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
-                oglas.As<Oglas>().Vestine
+                oglas.As<Oglas>().Vestine,
+                oglas.As<Oglas>().Oglasivac
             });
             
             var result = await query.ResultsAsync;
@@ -231,7 +236,8 @@ public class OglasController : ControllerBase
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
-                oglas.As<Oglas>().Vestine
+                oglas.As<Oglas>().Vestine,
+                oglas.As<Oglas>().Oglasivac
             });
             
             var result = await query.ResultsAsync;
@@ -267,7 +273,8 @@ public class OglasController : ControllerBase
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
-                oglas.As<Oglas>().Vestine
+                oglas.As<Oglas>().Vestine,
+                oglas.As<Oglas>().Oglasivac
             });
             
             var result = await query.ResultsAsync;
@@ -331,7 +338,8 @@ public class OglasController : ControllerBase
                 oglas.As<Oglas>().Opis,
                 oglas.As<Oglas>().Plata,
                 oglas.As<Oglas>().RadnoVreme,
-                oglas.As<Oglas>().Vestine
+                oglas.As<Oglas>().Vestine,
+                oglas.As<Oglas>().Oglasivac
             });
             
             var result = await query.ResultsAsync;

@@ -242,13 +242,20 @@ public class DadiljaController : ControllerBase
     {
         try
         {
-           await _client.Cypher
+           var query = _client.Cypher
            .Match("(dadilja:Dadilja)", "(oglas:Oglas)")
            .Where((Dadilja dadilja) => dadilja.Email == email)
            .AndWhere((Oglas oglas) => oglas.Id == oglasId)
            .Create("(dadilja)-[:SE_PRIJAVLJUJE]->(oglas)")
-           .ExecuteWithoutResultsAsync();
- 
+           .Return(oglas => oglas.As<Oglas>());
+
+            var oglasResult = await query.ResultsAsync;
+            var oglas = oglasResult.FirstOrDefault();
+
+           HashEntry[] hashEntry = {
+            new HashEntry("Oglas:"+ oglasId, JsonConvert.SerializeObject(oglas))
+            };
+            await _redisDB.HashSetAsync("PrijavljeniOglasi:" + email, hashEntry);
            return Ok("Uspesna prijava na oglas.");
         }
         catch (Exception ex)
