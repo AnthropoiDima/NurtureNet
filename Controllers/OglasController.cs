@@ -1,4 +1,5 @@
 using backend.Servisi.KorisnikFje;
+using StackExchange.Redis;
 [ApiController]
 [Route("[controller]")]
 public class OglasController : ControllerBase
@@ -6,13 +7,17 @@ public class OglasController : ControllerBase
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
     private KorisnikFje _korisnikFje;
+    private readonly IConnectionMultiplexer _redis;
+    private readonly IDatabase _redisDB;
     
 
-    public OglasController(IConfiguration configuration, IGraphClient graphClient)
+    public OglasController(IConfiguration configuration, IGraphClient graphClient, IConnectionMultiplexer redis)
     {
         _config = configuration;
         _client = graphClient;
         _korisnikFje = new KorisnikFje();
+        _redis = redis;
+        _redisDB = _redis.GetDatabase();
     }
     
     [HttpGet("PreuzmiOglase")]
@@ -47,6 +52,7 @@ public class OglasController : ControllerBase
         try
         {   
             Oglas noviOglas = new Oglas{
+                Id = int.Parse(_redisDB.StringGet("BrojacOglasaID").ToString()),
                 Opis = opis,
                 Plata = plata,
                 RadnoVreme = vreme,
@@ -59,6 +65,7 @@ public class OglasController : ControllerBase
            .WithParam("noviOglas", noviOglas)
            .ExecuteWithoutResultsAsync();
             
+            _redisDB.StringIncrement("BrojacOglasaID");
            return Ok("Uspesno dodavanje oglasa.");
         }
         catch (Exception ex)
@@ -73,11 +80,13 @@ public class OglasController : ControllerBase
     {
         try
         {
+            oglas.Id = int.Parse(_redisDB.StringGet("BrojacOglasaID").ToString());
            await _client.Cypher
            .Create("(o:Oglas $noviOglas)")
            .WithParam("noviOglas", oglas)
            .ExecuteWithoutResultsAsync();
             
+            _redisDB.StringIncrement("BrojacOglasaID");
            return Ok("Uspesno dodat oglas.");
         }
         catch (Exception ex)
@@ -343,6 +352,7 @@ public class OglasController : ControllerBase
         try
         {
             Oglas noviOglas = new Oglas{
+                Id = int.Parse(_redisDB.StringGet("BrojacOglasaID").ToString()),
                 Opis = opis,
                 Plata = plata,
                 RadnoVreme = vreme,
@@ -365,6 +375,7 @@ public class OglasController : ControllerBase
                 .WithParam("noviOglas", noviOglas)
                 .ExecuteWithoutResultsAsync();
             }            
+            _redisDB.StringIncrement("BrojacOglasaID");
            return Ok("Uspesno dodat oglas.");
         }
         catch (Exception ex)

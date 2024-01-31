@@ -1,15 +1,21 @@
+using StackExchange.Redis;
+
 [ApiController]
 [Route("[controller]")]
 public class OcenaController : ControllerBase
 {
     private readonly IGraphClient _client;
     private readonly IConfiguration _config;
+    private readonly IConnectionMultiplexer _redis;
+    private readonly IDatabase _redisDB;
     
 
-    public OcenaController(IConfiguration configuration, IGraphClient graphClient)
+    public OcenaController(IConfiguration configuration, IGraphClient graphClient, IConnectionMultiplexer redis)
     {
         _config = configuration;
         _client = graphClient;
+        _redis = redis;
+        _redisDB = _redis.GetDatabase();
     }
     
 
@@ -108,6 +114,7 @@ public class OcenaController : ControllerBase
         try
         {
             Ocena novaOcena = new Ocena{
+                Id = int.Parse(_redisDB.StringGet("BrojacOcenaID").ToString()),
                 Vrednost = vrednost,
                 Komentar = komentar
             };
@@ -119,6 +126,7 @@ public class OcenaController : ControllerBase
                 .WithParam("novaOcena", novaOcena)
                 .ExecuteWithoutResultsAsync();
             
+            _redisDB.StringIncrement("BrojacOcenaID");
            return Ok("Uspesno ocenjena dadilja.");
         }
         catch (Exception ex)
@@ -135,6 +143,7 @@ public class OcenaController : ControllerBase
         try
         {
             Ocena novaOcena = new Ocena{
+                Id = int.Parse(_redisDB.StringGet("BrojacOcenaID").ToString()),
                 Vrednost = vrednost,
                 Komentar = komentar
             };
@@ -146,6 +155,7 @@ public class OcenaController : ControllerBase
                 .WithParam("novaOcena", novaOcena)
                 .ExecuteWithoutResultsAsync();
             
+            _redisDB.StringIncrement("BrojacOcenaID");
            return Ok("Uspesno ocenjen korisnik.");
         }
         catch (Exception ex)

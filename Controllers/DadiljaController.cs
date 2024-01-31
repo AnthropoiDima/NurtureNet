@@ -213,6 +213,7 @@ public class DadiljaController : ControllerBase
         try
         {
             Oglas noviOglas = new Oglas{
+                Id = int.Parse(_redisDB.StringGet("BrojacOglasaID").ToString()),
                 Opis = opis,
                 Plata = plata,
                 RadnoVreme = vreme,
@@ -226,7 +227,7 @@ public class DadiljaController : ControllerBase
                 .Create("(dadilja)-[:OBJAVLJUJE]->(oglas:Oglas $noviOglas)")
                 .WithParam("noviOglas", noviOglas)
                 .ExecuteWithoutResultsAsync();
-            
+            _redisDB.StringIncrement("BrojacOglasaID");
            return Ok("Uspesno dodat oglas.");
         }
         catch (Exception ex)
