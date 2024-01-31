@@ -211,6 +211,28 @@ public class KorisnikController : ControllerBase
         }
     }
     
+    [HttpPut("IzmeniLozinku/{email}/{novaLozinka}")]
+    public async Task<ActionResult> IzmeniLozinku(string email, string novaLozinka)
+    {
+        try
+        {
+            novaLozinka = _autentifikacija.HesirajPassword(novaLozinka);
+           await _client.Cypher
+           .Match("(korisinik:Korisnik)")
+           .Where((Korisnik korisinik) => korisinik.Email == email)
+           .Set("korisinik.Password = $novaLozinka")
+           .WithParam("novaLozinka", novaLozinka)
+           .ExecuteWithoutResultsAsync();
+            
+           return Ok("Uspesno izmenjena lozinka.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena lozinke.");
+        }
+    }
+
     [HttpPut("RezervisiOglas/{email}/{oglasId}")]
     public async Task<ActionResult> RezervisiOglas(string email, int oglasId)
     {
