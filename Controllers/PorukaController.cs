@@ -48,7 +48,24 @@ public class PorukaController : ControllerBase
         }
     }
 
+    [HttpGet("PreuzmiPoruke/{emailSender}/{emailReceiver}")]
+    public async Task<ActionResult> PreuzmiPoruke(string emailSender, string emailReceiver)
+    {
+        try
+        {
+            string roomName = emailSender.CompareTo(emailReceiver) < 0 ? emailSender + emailReceiver : emailReceiver + emailSender;
+            
+            var RedislistaPoruka = await _redisDB.ListRangeAsync(roomName, 0, 20);
+            List<Poruka> listaPoruka = RedislistaPoruka.Select(p => JsonConvert.DeserializeObject<Poruka>(p)).ToList();
 
+            return Ok(listaPoruka);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return BadRequest("Neuspesno preuzimanje poruka.");
+        }
+    }  
     // [HttpGet("PreuzmiPoruke")]
     // public async Task<ActionResult> PreuzmiPoruke()
     // {
