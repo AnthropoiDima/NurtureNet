@@ -29,13 +29,16 @@ public class PorukaController : ControllerBase
         _redisDB = _redis.GetDatabase();
     }
     // [Authorize(Roles = "korisnik, dadilja")]
-    [HttpPost("PosaljiPoruku/{email}")]
-    public ActionResult PosaljiPoruku(string email, [FromBody] Poruka poruka)
+    [HttpPost("PosaljiPoruku/{emailSender}/{emailReceiver}")]
+    public ActionResult PosaljiPoruku(string emailSender, string emailReceiver, [FromBody] Poruka poruka)
     {
         try
         {   
+            string roomName = emailSender.CompareTo(emailReceiver) < 0 ? emailSender + emailReceiver : emailReceiver + emailSender;
+
             //_redisDB.Publish(new RedisChannel("Kanal:" + email, RedisChannel.PatternMode.Auto), JsonConvert.SerializeObject(poruka));
-            _hubContext.Clients.Group("Kanal:" + email).SendAsync("ReceiveMessage", poruka.Sadrzaj);
+            // _hubContext.Clients.Group(roomName).SendAsync("ReceiveMessage", poruka.Sadrzaj);
+            
             return Ok("Uspesno slanje poruke.");
         }
         catch (Exception e)

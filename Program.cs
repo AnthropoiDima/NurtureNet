@@ -6,6 +6,7 @@ using NRedisStack;
 using StackExchange.Redis;
 using System.Net;
 using backend.Hubs;
+using backend.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,12 +14,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
+    // options.AddPolicy("CORS", policy =>
+    // {
+    //     policy.AllowAnyHeader()
+    //           .AllowAnyMethod()
+    //           .AllowAnyOrigin();
+    // });
+
     options.AddPolicy("CORS", policy =>
     {
         policy.AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowAnyOrigin();
+            .AllowAnyMethod()
+            .WithOrigins("http://localhost:4200") // Update this with the actual origin of your Angular app
+            .AllowCredentials();
     });
+    
 });
 
 
@@ -64,7 +74,7 @@ builder.Services.AddSingleton<IGraphClient>(options => {
 });
 
 builder.Services.AddSignalR();
-
+builder.Services.AddSingleton<IDictionary<string, UserConnection>>(opts => new Dictionary<string, UserConnection>()); ;
 
 var app = builder.Build();
 
@@ -75,11 +85,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
 app.UseCors("CORS");
 
 app.UseAuthorization();
+app.UseHttpsRedirection();
 
 app.MapControllers();
 app.MapHub<ChatHub>("/hub");
