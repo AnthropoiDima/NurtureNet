@@ -162,8 +162,8 @@ public class OglasController : ControllerBase
         }
     }
     
-    [HttpGet("PreuzmiOglaseKorisnika")]
-    public async Task<ActionResult> PreuzmiOglaseKorisnika()
+    [HttpGet("PreuzmiSveOglaseKorisnika")]
+    public async Task<ActionResult> PreuzmiSveOglaseKorisnika()
     {
         try
         {
@@ -325,6 +325,33 @@ public class OglasController : ControllerBase
             var query = _client.Cypher
             .OptionalMatch("(dadilja:Dadilja)-[:OBJAVLJUJE]->(oglas:Oglas)")
             .Where((Dadilja dadilja) => dadilja.Email == email)
+            .Return(oglas => new
+            {
+                oglas.As<Oglas>().Id,
+                oglas.As<Oglas>().Opis,
+                oglas.As<Oglas>().Plata,
+                oglas.As<Oglas>().RadnoVreme,
+                oglas.As<Oglas>().Vestine
+            });
+            
+            var result = await query.ResultsAsync;
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesno!");
+        }
+    }
+
+     [HttpGet("PreuzmiOglaseKorisnika/{email}")]
+    public async Task<ActionResult> PreuzmiOglaseKorisnika(string email)
+    {
+        try
+        {
+            var query = _client.Cypher
+            .OptionalMatch("(korisnik:Korisnik)-[:OBJAVLJUJE]->(oglas:Oglas)")
+            .Where((Korisnik korisnik) => korisnik.Email == email)
             .Return(oglas => new
             {
                 oglas.As<Oglas>().Id,

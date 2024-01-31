@@ -254,4 +254,49 @@ public class KorisnikController : ControllerBase
             return BadRequest("Neuspesna prijava na oglas.");
         }
     }
+    
+    [HttpGet("PreuzmiPrijavljeneOglase/{email}")]
+    public async Task<ActionResult> PreuzmiPrijavljeneOglase(string email)
+    {
+        try
+        {
+            HashEntry[] jsonSet = await _redisDB.HashGetAllAsync("PrijavljeniOglasi:" + email);
+            if(jsonSet.Length == 0){
+            var query = _client.Cypher
+            .OptionalMatch("(korisnik:Korisnik)-[:SE_PRIJAVLJUJE]->(oglas:Oglas)")
+            .Where((Korisnik korisnik) => korisnik.Email == email)
+            .Return(oglas => new
+            {
+                oglas.As<Oglas>().Id,
+                oglas.As<Oglas>().Opis,
+                oglas.As<Oglas>().Plata,
+                oglas.As<Oglas>().RadnoVreme,
+                oglas.As<Oglas>().Vestine,
+                oglas.As<Oglas>().Oglasivac
+            });
+            
+            var result = await query.ResultsAsync;
+            List<HashEntry> hashEntries = new List<HashEntry>();
+            foreach (var oglas in result)
+            {
+                hashEntries.Add(new HashEntry("Oglas:"+ oglas.Id, JsonConvert.SerializeObject(oglas)));
+            }
+            await _redisDB.HashSetAsync("PrijavljeniOglasi:" + email, hashEntries.ToArray());
+            return Ok(result);
+            }
+            else{
+                List<Oglas> oglasList = new List<Oglas>();
+                foreach (var json in jsonSet)
+                {
+                    oglasList.Add(JsonConvert.DeserializeObject<Oglas>(json.Value));
+                }
+                return Ok(oglasList);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message + " " + ex.StackTrace);
+            return BadRequest("Neuspesno preuzimanje oglasa.");
+        }
+    }
 }
