@@ -13,11 +13,11 @@ public class Ocena
 
     public Ocena()
     {
-        Id = OcenaID++;
+        // Id = OcenaID++;
     }
     public Ocena(int vrednost, string komentar, Korisnik korisnik, Dadilja dadilja)
     {
-        Id = OcenaID++;
+        // Id = OcenaID++;
         Vrednost = vrednost;
         Komentar = komentar;
         Korisnik = korisnik;

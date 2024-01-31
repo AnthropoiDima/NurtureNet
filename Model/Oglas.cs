@@ -15,12 +15,12 @@ public class Oglas
 
     public Oglas()
     {
-        Id = OglasID++;
+        // Id = OglasID++;
     }
 
     public Oglas(string opis, double plata, string radnoVreme, string vestine, bool jeDadilja)
     {
-        Id = OglasID++;
+        // Id = OglasID++;
         Opis = opis;
         Plata = plata;
         RadnoVreme = radnoVreme;
