@@ -2,6 +2,9 @@ using backend.Servisi.Autentifikacija;
 using StackExchange.Redis;
 using backend.Servisi.KorisnikFje;
 using Microsoft.AspNetCore.Authorization;
+using backend.Hubs;
+using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 [ApiController]
 [Route("[controller]")]
 public class PorukaController : ControllerBase
@@ -10,27 +13,30 @@ public class PorukaController : ControllerBase
     private readonly IConfiguration _config;
     private readonly IConnectionMultiplexer _redis;
     private readonly IDatabase _redisDB;
+    private readonly IHubContext<ChatHub> _hubContext;
     private Autentifikacija _autentifikacija;
     private KorisnikFje _korisnikFje;
 
     public PorukaController(IConfiguration configuration, IGraphClient graphClient, 
-    IConnectionMultiplexer redis)
+    IConnectionMultiplexer redis, IHubContext<ChatHub> hubContext)
     {
         _config = configuration;
         _client = graphClient;
+        _hubContext = hubContext;
         _autentifikacija = new Autentifikacija(_config);
         _korisnikFje = new KorisnikFje();
         _redis = redis;
         _redisDB = _redis.GetDatabase();
     }
-    [Authorize(Roles = "korisnik, dadilja")]
-    [HttpPost("PosaljiPoruku")]
-    public ActionResult PosaljiPoruku([FromBody] Poruka poruka)
+    // [Authorize(Roles = "korisnik, dadilja")]
+    [HttpPost("PosaljiPoruku/{email}")]
+    public ActionResult PosaljiPoruku(string email, [FromBody] Poruka poruka)
     {
         try
-        {
-            string k = _korisnikFje.GetCurrentUserEmail(this.User)!;
-            return Ok("Uspesno slanje poruke." + k);
+        {   
+            //_redisDB.Publish(new RedisChannel("Kanal:" + email, RedisChannel.PatternMode.Auto), JsonConvert.SerializeObject(poruka));
+            _hubContext.Clients.Group("Kanal:" + email).SendAsync("ReceiveMessage", poruka.Sadrzaj);
+            return Ok("Uspesno slanje poruke.");
         }
         catch (Exception e)
         {
