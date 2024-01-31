@@ -123,12 +123,17 @@ public class OglasController : ControllerBase
     {
         try
         {
-           await _client.Cypher
-           .OptionalMatch("(o:Oglas)")
+           var query = _client.Cypher
+           .OptionalMatch("(o:Oglas)<-[:SE_PRIJAVLJUJE]-(d:Dadilja)")
            .Where((Oglas o) => o.Id == id)
            .DetachDelete("o")
-           .ExecuteWithoutResultsAsync();
+           .Return(d => new {d.As<Dadilja>().Email});
             
+            var emailResult = await query.ResultsAsync;
+            string email = emailResult.FirstOrDefault()?.Email;
+            
+            await _redisDB.HashDeleteAsync("PrijavljeniOglasi:"+ email, "Oglas:" + id);
+
            return Ok("Uspesno obrisan oglas.");
         }
         catch (Exception ex)
