@@ -31,12 +31,21 @@ public class AutentifikacijaController : ControllerBase
                 return BadRequest("Email ne postoji!");
             }
 
-            var query = await _client.Cypher
-                .Match("(k:Korisnik)")
+            var queryD = await _client.Cypher
+                .Match("(d:Dadilja)")
                 .Where((Dadilja d) => d.Email == dto.Email)
-                .Return(k => k.As<Dadilja>()).ResultsAsync;
+                .Return(d => d.As<Dadilja>()).ResultsAsync;
 
-            if (query.Count() != 0) 
+            if (queryD.Count() != 0) 
+            {
+                return BadRequest("Korisnik sa ovim emailom vec postoji.");
+            }
+            var queryK = await _client.Cypher
+                .Match("(d:Korisnik)")
+                .Where((Korisnik d) => d.Email == dto.Email)
+                .Return(d => d.As<Korisnik>()).ResultsAsync;
+
+            if (queryK.Count() != 0) 
             {
                 return BadRequest("Korisnik sa ovim emailom vec postoji.");
             }
@@ -86,6 +95,16 @@ public class AutentifikacijaController : ControllerBase
                 .Return(k => k.As<Korisnik>()).ResultsAsync;
 
             if (query.Count() != 0)
+            {
+                return BadRequest("Korisnik sa ovim emailom vec postoji.");
+            }
+            
+            var queryD = await _client.Cypher
+                .Match("(d:Dadilja)")
+                .Where((Dadilja d) => d.Email == dto.Email)
+                .Return(d => d.As<Dadilja>()).ResultsAsync;
+
+            if (queryD.Count() != 0) 
             {
                 return BadRequest("Korisnik sa ovim emailom vec postoji.");
             }
