@@ -65,7 +65,7 @@ public class AutentifikacijaController : ControllerBase
             };
 
             await _client.Cypher
-                .Create("(d:Dadilja {nova})")
+                .Create("(d:Dadilja $nova)")
                 .WithParam("nova", novaDadilja)
                 .ExecuteWithoutResultsAsync();
 
@@ -98,7 +98,7 @@ public class AutentifikacijaController : ControllerBase
             {
                 return BadRequest("Korisnik sa ovim emailom vec postoji.");
             }
-            
+
             var queryD = await _client.Cypher
                 .Match("(d:Dadilja)")
                 .Where((Dadilja d) => d.Email == dto.Email)

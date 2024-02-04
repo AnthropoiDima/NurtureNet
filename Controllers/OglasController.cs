@@ -128,11 +128,25 @@ public class OglasController : ControllerBase
            .Where((Oglas o) => o.Id == id)
            .DetachDelete("o")
            .Return(d => new {d.As<Dadilja>().Email});
+
             
             var emailResult = await query.ResultsAsync;
-            string email = emailResult.FirstOrDefault()?.Email;
+            string emailD = emailResult.FirstOrDefault()?.Email;
             
-            await _redisDB.HashDeleteAsync("PrijavljeniOglasi:"+ email, "Oglas:" + id);
+            if(!string.IsNullOrWhiteSpace(emailD)){
+                await _redisDB.HashDeleteAsync("PrijavljeniOglasi:"+ emailD, "Oglas:" + id);
+            }
+
+           var queryK = _client.Cypher
+           .OptionalMatch("(o:Oglas)<-[:SE_PRIJAVLJUJE]-(k:Korisnik)")
+           .Where((Oglas o) => o.Id == id)
+           .DetachDelete("o")
+           .Return(k => new {k.As<Korisnik>().Email});
+           emailResult = await queryK.ResultsAsync;
+           string emailK = emailResult.FirstOrDefault()?.Email;
+           if(!string.IsNullOrWhiteSpace(emailK)){
+                await _redisDB.HashDeleteAsync("PrijavljeniOglasi:"+ emailK, "Oglas:" + id);
+            }
 
            return Ok("Uspesno obrisan oglas.");
         }
@@ -271,6 +285,7 @@ public class OglasController : ControllerBase
             var query = _client.Cypher
             .Match("(oglas:Oglas)")
             .Where("ANY(vestine in $sveVestine WHERE oglas.Vestine contains vestine)")
+            .AndWhere((Oglas oglas) => oglas.JeDadilja == false)
             .WithParam("sveVestine", sveVestine)
             .Return(oglas => new
             {
