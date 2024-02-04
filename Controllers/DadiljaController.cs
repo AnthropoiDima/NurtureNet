@@ -183,6 +183,27 @@ public class DadiljaController : ControllerBase
             return BadRequest("Neuspesna izmena lozinke.");
         }
     }
+    
+    [HttpPut("IzmeniDadilju/{email}")]
+    public async Task<ActionResult> IzmeniDadilju(string email, [FromBody] Dadilja novaDadilja)
+    {
+        try
+        {
+           await _client.Cypher
+           .Match("(dadilja:Dadilja)")
+           .Where((Dadilja dadilja) => dadilja.Email == email)
+           .Set("dadilja = $novaDadilja")
+           .WithParam("novaDadilja", novaDadilja)
+           .ExecuteWithoutResultsAsync();
+            
+           return Ok("Uspesno izmenjena dadilja.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return BadRequest("Neuspesna izmena lozinke.");
+        }
+    }
 
     [HttpDelete("ObrisiDadilju/{email}")]
     public async Task<ActionResult> ObrisiDadilju(string email)

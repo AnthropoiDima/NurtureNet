@@ -39,7 +39,7 @@ public class PorukaController : ControllerBase
             var RedislistaPoruka = await _redisDB.ListRangeAsync(roomName, 0, 20);
             List<Poruka> listaPoruka = RedislistaPoruka.Select(p => JsonConvert.DeserializeObject<Poruka>(p)).ToList();
 
-            return Ok(listaPoruka);
+            return Ok(listaPoruka.Reverse<Poruka>());
         }
         catch (Exception e)
         {
